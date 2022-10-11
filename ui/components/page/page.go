@@ -1,28 +1,25 @@
 package page
 
 import (
-	"fmt"
 	"log"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/danielcmessias/lfq/data"
-	"github.com/danielcmessias/lfq/ui/components/help"
-	"github.com/danielcmessias/lfq/ui/components/table"
-	"github.com/danielcmessias/lfq/ui/components/tabs"
-	"github.com/danielcmessias/lfq/ui/constants"
-	"github.com/danielcmessias/lfq/ui/context"
-)
-
-const (
-	PAGE_HOME     = iota
-	PAGE_DATABASE = iota
-	PAGE_TABLE    = iota
+	"github.com/danielcmessias/sawsy/data"
+	"github.com/danielcmessias/sawsy/ui/components/chart/histogram"
+	"github.com/danielcmessias/sawsy/ui/components/code"
+	"github.com/danielcmessias/sawsy/ui/components/gallery"
+	"github.com/danielcmessias/sawsy/ui/components/help"
+	"github.com/danielcmessias/sawsy/ui/components/pane"
+	"github.com/danielcmessias/sawsy/ui/components/table"
+	"github.com/danielcmessias/sawsy/ui/components/tabs"
+	"github.com/danielcmessias/sawsy/ui/context"
 )
 
 type NewRowsMsg struct {
 	Page      string
-	TabId     int
+	PaneId    int
 	Rows      []table.Row
 	NextCmd   tea.Cmd
 	Overwrite bool
@@ -33,77 +30,65 @@ type BatchedNewRowsMsg struct {
 }
 
 type ChangePageMsg struct {
-	NewPage      string // Id of page to switch to
-	FetchData    bool // If true, clears and (re)fetches data on new page
-	PageMetadata interface{}
+	NewPage     string // Id of page to switch to
+	FetchData   bool   // If true, clears and (re)fetches data on new page
+	PageContext interface{}
 
 	InspectedRow map[string]string
 }
 
+type PageSpec struct {
+	Name      string
+	PaneSpecs []pane.PaneSpec
+}
+
 // Logical section with a set of tables/tabs
 type Model struct {
-	Id     int
-	Ctx    context.ProgramContext
-	Tabs   tabs.Model
-	Tables []table.Model
-
-	Spec PageSpec
-
-	Metadata interface{}
+	ctx     *context.ProgramContext
+	Spec    PageSpec
+	Context interface{}
+	Tabs    tabs.Model
+	Panes   []pane.Pane
 }
 
 type Page interface {
 	Init() tea.Cmd
 	View() string
-	UpdateProgramContext(ctx *context.ProgramContext)
-	UpdateSearch(msg tea.Msg) tea.Cmd
 	NextTab() int
 	PrevTab() int
-	NextItem() int
-	PrevItem() int
-	FirstItem() int
-	LastItem() int
-	NextCol() int
-	PrevCol() int
-	StartSearch()
-	StopSearch()
-	FetchDataCmd(client data.Client) tea.Cmd
+	FetchData(client data.Client) tea.Cmd
 	ClearData()
 	AppendRows(tabId int, rows []table.Row)
 	ClearRows(tabId int)
-	InspectFieldCmd(client data.Client) tea.Cmd
-	SetPageMetadata(metadata interface{})
-	
-	
-	FromInspectedRow(marshalledRow map[string]string)
-	InspectRow(client data.Client) tea.Cmd
+	GetPageContext() interface{}
+	SetPageContext(context interface{})
+	GetSpec() PageSpec
+
+	GetCurrentPaneId() int
+
+	Inspect(client data.Client) tea.Cmd
+
+	Update(data.Client, tea.Msg) (cmd tea.Cmd, consumed bool)
+
+	Hide() // Called when the page is no longer visible
+	SetSize(width int, height int)
 }
 
-func PageModelFromSpecs(id int, specs []table.TableSpec) Model {
-	var tables []table.Model
-	var tabNames []string
-	for _, spec := range specs {
-		tables = append(tables, table.NewModel(spec.Columns, nil, spec.Name))
-		tabNames = append(tabNames, fmt.Sprintf("%s %s", spec.Icon, spec.Name))
+func New(ctx *context.ProgramContext, spec PageSpec) Model {
+	var tabsList []tabs.Tab
+	var panes []pane.Pane
+	for _, s := range spec.PaneSpecs {
+		tabsList = append(tabsList, tabs.Tab{
+			Name: s.GetName(),
+			Icon: s.GetIcon(),
+		})
+		panes = append(panes, s.NewFromSpec(ctx, s))
 	}
 	return Model{
-		Tabs:   tabs.NewModel(tabNames),
-		Tables: tables,
-	}
-}
-
-func New(spec PageSpec) Model {
-	var tables []table.Model
-	var tabNames []string
-	for _, spec := range spec.TableSpecs {
-		tables = append(tables, table.NewModel(spec.Columns, nil, spec.Name))
-		tabNames = append(tabNames, fmt.Sprintf("%s %s", spec.Icon, spec.Name))
-	}
-	return Model{
-		Tabs:   tabs.NewModel(tabNames),
-		Tables: tables,
-
-		Spec: spec,
+		ctx:   ctx,
+		Spec:  spec,
+		Tabs:  tabs.NewModel(ctx, tabsList),
+		Panes: panes,
 	}
 }
 
@@ -112,124 +97,137 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) View() string {
+	pane := m.Panes[m.Tabs.CurrentTabId]
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		m.Tabs.View(m.Ctx),
-		m.CurrentTable().View(),
+		m.Tabs.View(),
+		pane.View(),
 	)
 }
 
-func (m *Model) UpdateProgramContext(ctx *context.ProgramContext) {
-	m.Ctx = *ctx
-	tableDimensions := constants.Dimensions{
-		Width:  ctx.ScreenWidth,
-		Height: ctx.ScreenHeight - tabs.TabsHeight - help.HelpHeight,
-	}
-	for i := range m.Tables {
-		m.Tables[i].SetDimensions(tableDimensions)
+func (m *Model) SetSize(width int, height int) {
+	for _, p := range m.Panes {
+		p.SetSize(width, height-tabs.TabsHeight-help.HelpHeight)
 	}
 }
 
-func (m *Model) CurrentTable() *table.Model {
-	return &m.Tables[m.Tabs.CurrentTabId]
+func (m *Model) CurrentPane() pane.Pane {
+	return m.Panes[m.Tabs.CurrentTabId]
 }
 
 func (m *Model) NextTab() int {
-	m.StopSearch()
+	m.CurrentPane().Hide()
 	return m.Tabs.NextTab()
 }
 
 func (m *Model) PrevTab() int {
-	m.StopSearch()
+	m.CurrentPane().Hide()
 	return m.Tabs.PrevTab()
 }
 
-func (m *Model) NextItem() int {
-	return m.CurrentTable().NextItem()
-}
-
-func (m *Model) PrevItem() int {
-	return m.CurrentTable().PrevItem()
-}
-
-func (m *Model) FirstItem() int {
-	return m.CurrentTable().FirstItem()
-}
-
-func (m *Model) LastItem() int {
-	return m.CurrentTable().LastItem()
-}
-
-func (m *Model) NextCol() int {
-	return m.CurrentTable().NextCol()
-}
-
-func (m *Model) PrevCol() int {
-	return m.CurrentTable().PrevCol()
-}
-
-func (m *Model) StartSearch() {
-	m.CurrentTable().Search.Focus()
-}
-
-func (m *Model) StopSearch() {
-	m.CurrentTable().Search.Blur()
-}
-
 func (m *Model) AppendRows(tabId int, rows []table.Row) {
-	m.Tables[tabId].AppendRows(rows)
+	table, ok := m.Panes[tabId].(*table.Model)
+	if !ok {
+		log.Fatal("This pane is not a table")
+	}
+	table.AppendRows(rows)
 }
 
 func (m *Model) ClearRows(tabId int) {
-	m.Tables[tabId].ClearRows()
+	table, ok := m.Panes[tabId].(*table.Model)
+	if !ok {
+		log.Fatal("This pane is not a table")
+	}
+	table.ClearRows()
 }
 
-func (m *Model) FetchDataCmd(client data.Client) tea.Cmd {
+func (m *Model) FetchData(client data.Client) tea.Cmd {
 	return nil
 }
 
 func (m *Model) ClearData() {
-	for i := range(m.Tables) {
-		m.Tables[i].ClearRows()
-	}
-}
-
-func (m *Model) UpdateSearch(msg tea.Msg) tea.Cmd {
-	var (
-		cmds []tea.Cmd
-		cmd tea.Cmd
-	)
-	for i := range(m.Tables) {
-		m.Tables[i].Search, cmd = m.Tables[i].Search.Update(msg)
-		cmds = append(cmds, cmd)
-	}
-	m.CurrentTable().Filter(m.CurrentTable().Search.Value())
-	return tea.Batch(cmds...)
-}
-
-func (m *Model) InspectFieldCmd(client data.Client) tea.Cmd  {
-	return nil
-}
-
-func (m *Model) SetPageMetadata(metadata interface{}) {
-	m.Metadata = metadata
-}
-
-func (m *Model) FromInspectedRow(marshalledRow map[string]string) {
-	log.Fatal("Not implemented")
-}
-
-func (m *Model) InspectRow(client data.Client) tea.Cmd  {
-	nextPage := m.Spec.TableSpecs[m.Tabs.CurrentTabId].InspectRowPage
-	if (nextPage != "") {
-		changePageCmd := func() tea.Msg {
-			return ChangePageMsg{
-				NewPage: nextPage,
-				FetchData: true,
-				InspectedRow: m.CurrentTable().GetMarshalledRow(),
-			}
+	for _, pane := range m.Panes {
+		table, ok := pane.(*table.Model)
+		if ok {
+			table.ClearRows()
 		}
-		return changePageCmd
 	}
+}
+
+func (m *Model) GetPageContext() interface{} {
+	return m.Context
+}
+
+func (m *Model) SetPageContext(context interface{}) {
+	m.Context = context
+}
+
+func (m *Model) GetSpec() PageSpec {
+	return m.Spec
+}
+
+func (m *Model) GetPaneId(paneName string) int {
+	for i, p := range m.Panes {
+		if p.GetSpec().GetName() == paneName {
+			return i
+		}
+	}
+	log.Fatalf("Pane %s not found", paneName)
+	return -1
+}
+
+func (m *Model) Inspect(client data.Client) tea.Cmd {
+	// Not implemented
 	return nil
+}
+
+func (m *Model) Update(client data.Client, msg tea.Msg) (tea.Cmd, bool) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
+	_, cmd, consumed := m.CurrentPane().Update(msg)
+	cmds = append(cmds, cmd)
+	if consumed {
+		return tea.Batch(cmds...), consumed
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, m.ctx.Keys.NextTab):
+			m.NextTab()
+		case key.Matches(msg, m.ctx.Keys.PrevTab):
+			m.PrevTab()
+		}
+	case code.NewCodeContentMsg:
+		if msg.Page == m.Spec.Name {
+			m.Panes[msg.PaneId].(*code.Model).SetContent(msg.Content, msg.Filepath)
+		}
+	case histogram.NewDataMsg:
+		if msg.Page == m.Spec.Name {
+			// Not entirely happy with how this works, but will do for now
+			gallery, ok := m.Panes[msg.PaneId].(*gallery.Model)
+			if ok {
+				gallery.Panes[msg.GalleryPaneId].(*histogram.Model).SetData(msg.Data)
+				break
+			}
+			m.Panes[msg.PaneId].(*histogram.Model).SetData(msg.Data)
+		}
+	}
+
+	return tea.Batch(cmds...), false
+}
+
+func (m *Model) GetCurrentPaneId() int {
+	return m.Tabs.CurrentTabId
+}
+
+func (m *Model) Hide() {
+	pane := m.CurrentPane()
+	table, ok := pane.(*table.Model)
+	if !ok {
+		log.Fatal("This pane is not a table")
+	}
+	table.Hide()
 }

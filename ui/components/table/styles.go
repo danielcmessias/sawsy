@@ -2,42 +2,41 @@ package table
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/danielcmessias/lfq/ui/styles"
+	"github.com/danielcmessias/sawsy/ui/styles"
 )
 
 var (
-    headerHeight = 3
-    searchHeight = 1
-    
-    cellStyle = lipgloss.NewStyle().
-        PaddingLeft(1).
-        PaddingRight(1).
-        MaxHeight(1)
+	headerHeight = 3
+	searchHeight = 1
 
-    selectedCellStyle = cellStyle.Copy().
-        Bold(true).
-        Foreground(styles.DefaultTheme.BrightMainText)
+	cellStyle = lipgloss.NewStyle().
+			Foreground(styles.Theme.MainText).
+			PaddingLeft(1).
+			PaddingRight(1).
+			MaxHeight(1)
 
-    titleCellStyle = cellStyle.Copy().
-        Bold(true).
-        Foreground(styles.DefaultTheme.MainText)
+	selectedCellStyle = cellStyle.Copy().
+				Bold(true).
+				Foreground(styles.Theme.HighlightRow)
 
-    selectedTitleCellStyle = cellStyle.Copy().
-        Bold(true).
-        Foreground(styles.DefaultTheme.SelectedColHeader)
+	titleCellStyle = cellStyle.Copy().
+			Bold(true).
+			Foreground(styles.Theme.MainText)
 
-    singleRuneTitleCellStyle = titleCellStyle.Copy().Width(styles.SingleRuneWidth)
+	selectedTitleCellStyle = cellStyle.Copy().
+				Bold(true).
+				Foreground(styles.Theme.HighlightColumn)
 
-    headerStyle = lipgloss.NewStyle().
-        BorderStyle(lipgloss.NormalBorder()).
-        BorderForeground(styles.DefaultTheme.Border).
-        BorderBottom(true)
+	headerStyle = lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(styles.Theme.Border).
+			BorderBottom(true)
 
-    rowStyle = lipgloss.NewStyle().
-        BorderStyle(lipgloss.NormalBorder()).
-        BorderForeground(styles.DefaultTheme.FaintBorder).
-        BorderBottom(true)
+	rowStyle = lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(styles.Theme.FaintBorder).
+			BorderBottom(true)
 
-    promptStyle = lipgloss.NewStyle().
-        Foreground(styles.DefaultTheme.SearchPrompt)
+	promptStyle = lipgloss.NewStyle().
+			Foreground(styles.Theme.SearchPrompt)
 )

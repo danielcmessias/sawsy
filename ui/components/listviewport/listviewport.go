@@ -5,8 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/danielcmessias/lfq/ui/constants"
-	"github.com/danielcmessias/lfq/utils"
+	"github.com/danielcmessias/sawsy/utils"
 )
 
 type Model struct {
@@ -19,17 +18,14 @@ type Model struct {
 	ItemTypeLabel  string
 }
 
-func NewModel(dimensions constants.Dimensions, itemTypeLabel string, numItems, listItemHeight int) Model {
+func NewModel(itemTypeLabel string, numItems, listItemHeight int) Model {
 	model := Model{
 		NumItems:       numItems,
 		ListItemHeight: listItemHeight,
 		currId:         0,
-		viewport: viewport.Model{
-			Width:  dimensions.Width,
-			Height: dimensions.Height - pagerHeight,
-		},
-		TopBoundId:    1,
-		ItemTypeLabel: itemTypeLabel,
+		viewport:       viewport.Model{},
+		TopBoundId:     1,
+		ItemTypeLabel:  itemTypeLabel,
 	}
 	model.BottomBoundId = utils.Min(model.NumItems-1, model.GetNumRowsPerPage()-1)
 	return model
@@ -95,9 +91,9 @@ func (m *Model) LastItem() int {
 	return m.currId
 }
 
-func (m *Model) SetDimensions(dimensions constants.Dimensions) {
-	m.viewport.Height = dimensions.Height - pagerHeight
-	m.viewport.Width = dimensions.Width
+func (m *Model) SetSize(width int, height int) {
+	m.viewport.Width = width
+	m.viewport.Height = height - pagerHeight
 }
 
 func (m *Model) View() string {

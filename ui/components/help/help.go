@@ -4,16 +4,17 @@ import (
 	bbHelp "github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/danielcmessias/lfq/ui/context"
-	"github.com/danielcmessias/lfq/ui/styles"
-	"github.com/danielcmessias/lfq/utils"
+	"github.com/danielcmessias/sawsy/ui/context"
+	"github.com/danielcmessias/sawsy/ui/styles"
+	"github.com/danielcmessias/sawsy/utils"
 )
 
 type Model struct {
+	ctx  *context.ProgramContext
 	help bbHelp.Model
 }
 
-func NewModel() Model {
+func NewModel(ctx *context.ProgramContext) Model {
 	help := bbHelp.NewModel()
 	help.Styles = bbHelp.Styles{
 		ShortDesc:      helpTextStyle.Copy(),
@@ -26,6 +27,7 @@ func NewModel() Model {
 	}
 
 	return Model{
+		ctx:  ctx,
 		help: help,
 	}
 }
@@ -42,9 +44,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) View(ctx context.ProgramContext) string {
+func (m Model) View() string {
 	return styles.FooterStyle.Copy().
-		Width(ctx.ScreenWidth).
+		Width(m.ctx.ScreenWidth).
 		Render(m.help.View(utils.Keys))
 }
 

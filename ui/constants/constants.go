@@ -20,11 +20,6 @@ type KeyMap struct {
 	Quit          key.Binding
 }
 
-type Dimensions struct {
-	Width  int
-	Height int
-}
-
 var (
 	Keys = KeyMap{
 		Up: key.NewBinding(

@@ -4,7 +4,7 @@ before:
   - go mod vendor
 
 builds:
-  - binary: lfq
+  - binary: sawsy
     goos:
       - darwin
       - linux
@@ -24,8 +24,8 @@ universal_binaries:
 
 brews:
   -
-    name: lfq
-    homepage: "https://github.com/danielcmessias/lfq"
+    name: sawsy
+    homepage: "https://github.com/danielcmessias/sawsy"
     tap:
       owner: danielcmessias
       name: homebrew-tap

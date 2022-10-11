@@ -2,18 +2,24 @@ package main
 
 import (
 	"log"
+	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/danielcmessias/lfq/data"
-	"github.com/danielcmessias/lfq/ui"
+	"github.com/danielcmessias/sawsy/config"
+	"github.com/danielcmessias/sawsy/ui"
 )
 
 func main() {
-	c := data.NewClient()
-	c.FetchTableRows(nil)
+	firstPage := "services"
+	args := os.Args[1:]
+	if len(args) > 0 {
+		firstPage = args[0]
+	}
 
-	m := ui.NewModel()
-    p := tea.NewProgram(
+	config, _ := config.ReadConfig()
+
+	m := ui.NewModel(config, firstPage)
+	p := tea.NewProgram(
 		m,
 		tea.WithAltScreen(),
 	)

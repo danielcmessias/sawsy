@@ -1,21 +1,25 @@
 package services
 
 import (
-	"github.com/danielcmessias/lfq/ui/components/page"
-	"github.com/danielcmessias/lfq/ui/components/table"
+	"github.com/danielcmessias/sawsy/ui/components/page"
+	"github.com/danielcmessias/sawsy/ui/components/pane"
+	"github.com/danielcmessias/sawsy/ui/components/table"
+	"github.com/danielcmessias/sawsy/utils/icons"
 )
 
 var servicesPageSpec = page.PageSpec{
-    Name: "services",
-    TableSpecs: []table.TableSpec{
-        {
-            Name: "Services",
-            Icon: "ﬓ",
-            Columns: []table.Column{
-                {
-                    Title: "Name",
-                },
-            },
-        },
-    },
+	Name: "services",
+	PaneSpecs: []pane.PaneSpec{
+		table.TableSpec{
+			BaseSpec: pane.BaseSpec{
+				Name: "Services",
+				Icon: icons.APPLICATION,
+			},
+			Columns: []table.Column{
+				{
+					Title: "Name",
+				},
+			},
+		},
+	},
 }

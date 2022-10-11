@@ -1,5 +1,9 @@
 package context
 
+import (
+	"github.com/danielcmessias/sawsy/config"
+	"github.com/danielcmessias/sawsy/utils"
+)
 
 type ProgramContext struct {
 	ScreenHeight      int
@@ -7,7 +11,11 @@ type ProgramContext struct {
 	MainContentWidth  int
 	MainContentHeight int
 	AwsAccountId      string
-	// Config            *config.Config
-	// View              config.ViewType
-}
+	AwsService        string
+	Config            *config.Config
 
+	Keys utils.KeyMap
+	// View              config.ViewTyp
+
+	LockKeyboardCapture bool
+}
