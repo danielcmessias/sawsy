@@ -1,0 +1,37 @@
+before:
+  hooks:
+  - go mod tidy
+  - go mod vendor
+
+builds:
+  - binary: lfq
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -mod=vendor
+
+release:
+  prerelease: auto
+
+universal_binaries:
+  - replace: true
+
+brews:
+  -
+    name: lfq
+    homepage: "https://github.com/danielcmessias/lfq"
+    tap:
+      owner: danielcmessias
+      name: homebrew-tap
+    commit_author:
+      name: danielcmessias
+      email: danielcmessias@gmail.com
+
+checksum:
+  name_template: 'checksums.txt'
