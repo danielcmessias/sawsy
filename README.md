@@ -56,7 +56,7 @@ fast to add new views that just list tabular data. Beyond that takes some more w
 | Lake Formation | Partially implemented. |
 | Lambda | Bare bones only. |
 | RDS | Partially implemented. |
-| S3 | Partially implemented. |
+| S3 | Partially implemented. <br><br><em>Known issues:</em><br><ul><li>Only returns up to 1000 objects.</li></ul> |
 
 
 # Issues

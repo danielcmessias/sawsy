@@ -23,12 +23,11 @@ import (
 )
 
 type Model struct {
-	config      config.Config
-	client      data.Client
-	ctx         *context.ProgramContext
-	help        help.Model
-	isSearching bool
-	keys        utils.KeyMap
+	config config.Config
+	client data.Client
+	ctx    *context.ProgramContext
+	help   help.Model
+	keys   utils.KeyMap
 
 	pages        map[string]page.Page
 	currentPage  string
@@ -113,7 +112,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.keys.Inspect) && !m.isSearching:
+		case key.Matches(msg, m.keys.Inspect) && !m.ctx.LockKeyboardCapture:
 			cmds = append(cmds, m.getCurrentPage().Inspect(m.client))
 
 		case key.Matches(msg, m.keys.Services) && !m.ctx.LockKeyboardCapture:
@@ -128,11 +127,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.visitedPages = m.visitedPages[:l-1]
 			cmds = append(cmds, m.changePage(prev.PageName, prev.Context, true))
 
-		case key.Matches(msg, m.keys.Refresh) && !m.isSearching:
+		case key.Matches(msg, m.keys.Refresh) && !m.ctx.LockKeyboardCapture:
 			// Not implemented yet!
 
 		case key.Matches(msg, m.keys.Quit):
-			if !(m.isSearching && msg.String() == "q") {
+			if !(m.ctx.LockKeyboardCapture && msg.String() == "q") {
 				return m, tea.Quit
 			}
 		}
