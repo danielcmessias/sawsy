@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 )
 
+const LOADING_ALIAS = "..."
+
 func statisticOfDatapoint(datapoint types.Datapoint, statistic types.Statistic) *float64 {
 	switch statistic {
 	case types.StatisticAverage:

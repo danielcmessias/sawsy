@@ -174,6 +174,22 @@ func (m *Model) GetMarshalledRow() map[string]string {
 	return rowMap
 }
 
+func (m *Model) MarhsalRow(row Row) map[string]string {
+	rowMap := make(map[string]string)
+	for i, col := range m.Columns {
+		rowMap[col.Title] = row[i]
+	}
+	return rowMap
+}
+
+func (m *Model) UnmarhsalRow(row map[string]string) Row {
+	rowArr := make(Row, len(m.Columns))
+	for i, col := range m.Columns {
+		rowArr[i] = row[col.Title]
+	}
+	return rowArr
+}
+
 func (m *Model) nextCol() int {
 	m.Columns[m.currColumnId].isSelected = utils.BoolPtr(false)
 	m.currColumnId = (m.currColumnId + 1) % len(m.Columns)
@@ -218,6 +234,19 @@ func (m *Model) AppendRows(rows []Row) {
 	if len(rows) == 0 {
 		m.noDataLabel = "No data"
 	}
+}
+
+// Updates a row using a given column as the primary key
+func (m *Model) UpdateRow(primaryKeyIndex int, newRow Row) {
+	newRows := make([]Row, 0, len(m.rows))
+	for _, r := range m.rows {
+		if r[primaryKeyIndex] == newRow[primaryKeyIndex] {
+			newRows = append(newRows, newRow)
+		} else {
+			newRows = append(newRows, r)
+		}
+	}
+	m.SetRows(newRows)
 }
 
 func (m *Model) ClearRows() {

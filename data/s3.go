@@ -6,7 +6,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
@@ -27,52 +26,31 @@ func NewS3Client(ctx context.Context, s3 *s3.Client) *S3Client {
 	}
 }
 
-func (c *S3Client) GetBuckets(nextToken *string) ([]table.Row, *string, error) {
+func (c *S3Client) GetBuckets() ([]table.Row, error) {
 	input := s3.ListBucketsInput{}
 	output, err := c.s3.ListBuckets(c.ctx, &input)
 	if err != nil {
 		log.Fatalf("unable to get databases: %v", err)
 	}
 
-	var wg sync.WaitGroup
-	regionsCh := make(chan struct {
-		int
-		string
-	}, len(output.Buckets))
-
 	var rows []table.Row
-	for i, b := range output.Buckets {
-		wg.Add(1)
-		go func(rowIndex int, bucket string) {
-			defer wg.Done()
-
-			region, err := manager.GetBucketRegion(c.ctx, c.s3, bucket)
-			regionsCh <- struct {
-				int
-				string
-			}{rowIndex, region}
-
-			if err != nil {
-				log.Fatalf("Error getting region for bucket %s, %v", bucket, err)
-			}
-		}(i, aws.ToString(b.Name))
-
+	for _, b := range output.Buckets {
 		rows = append(rows, table.Row{
 			aws.ToString(b.Name),
-			"...",
+			LOADING_ALIAS,
 			formatTime(b.CreationDate),
 		})
 	}
 
-	go func() {
-		wg.Wait()
-		close(regionsCh)
-	}()
-	for item := range regionsCh {
-		rows[item.int][1] = item.string
-	}
+	return rows, nil
+}
 
-	return rows, nil, nil
+func (c *S3Client) GetBucketRegion(bucket string) (string, error) {
+	region, err := manager.GetBucketRegion(c.ctx, c.s3, bucket)
+	if err != nil {
+		log.Fatalf("Error getting region for bucket %s, %v", bucket, err)
+	}
+	return region, nil
 }
 
 func (c *S3Client) GetBucketPolicy(bucket string, region string) (string, error) {

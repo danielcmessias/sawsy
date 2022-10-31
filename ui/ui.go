@@ -11,6 +11,7 @@ import (
 
 	"github.com/danielcmessias/sawsy/ui/components/help"
 	"github.com/danielcmessias/sawsy/ui/components/page"
+	"github.com/danielcmessias/sawsy/ui/components/table"
 	"github.com/danielcmessias/sawsy/ui/context"
 	"github.com/danielcmessias/sawsy/ui/pages/glue"
 	"github.com/danielcmessias/sawsy/ui/pages/iam"
@@ -139,6 +140,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case page.NewRowsMsg:
 		cmds = append(cmds, m.parseNewRowsMsg(msg))
 
+	case page.UpdateRowMsg:
+		m.parseUpdateRowMsg(msg)
+
 	case page.BatchedNewRowsMsg:
 		for _, _msg := range msg.Msgs {
 			cmds = append(cmds, m.parseNewRowsMsg(_msg))
@@ -202,6 +206,14 @@ func (m *Model) parseNewRowsMsg(msg page.NewRowsMsg) tea.Cmd {
 		cmds = append(cmds, msg.NextCmd)
 	}
 	return tea.Batch(cmds...)
+}
+
+func (m *Model) parseUpdateRowMsg(msg page.UpdateRowMsg) {
+	table, ok := m.pages[msg.Page].GetPaneAt(msg.PaneId).(*table.Model)
+	if !ok {
+		log.Fatal("This pane is not a table")
+	}
+	table.UpdateRow(msg.PrimaryKeyIndex, msg.Row)
 }
 
 func (m *Model) changePage(pageName string, context interface{}, fetchData bool) tea.Cmd {

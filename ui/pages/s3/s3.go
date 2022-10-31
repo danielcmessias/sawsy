@@ -22,22 +22,50 @@ func NewS3Page(ctx *context.ProgramContext) *S3PageModel {
 
 func (m *S3PageModel) FetchData(client data.Client) tea.Cmd {
 	return tea.Batch(
-		m.fetchBuckets(client, nil),
+		m.fetchBuckets(client),
 	)
 }
 
-func (m *S3PageModel) fetchBuckets(client data.Client, nextToken *string) tea.Cmd {
+func (m *S3PageModel) fetchBuckets(client data.Client) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.S3.GetBuckets(nextToken)
-		msg := page.NewRowsMsg{
-			Page:   m.Spec.Name,
-			PaneId: m.GetPaneId("Buckets"),
-			Rows:   rows,
+		var nextCmds []tea.Cmd
+
+		rows, _ := client.S3.GetBuckets()
+		for _, row := range rows {
+			nextCmds = append(nextCmds, m.fetchBucketRegion(client, row))
 		}
-		if nextToken != nil {
-			msg.NextCmd = m.fetchBuckets(client, nextToken)
+
+		msg := page.NewRowsMsg{
+			Page:    m.Spec.Name,
+			PaneId:  m.GetPaneId("Buckets"),
+			Rows:    rows,
+			NextCmd: tea.Batch(nextCmds...),
 		}
 		return msg
+	}
+}
+
+func (m *S3PageModel) fetchBucketRegion(client data.Client, row table.Row) tea.Cmd {
+	table, ok := m.CurrentPane().(*table.Model)
+	if !ok {
+		log.Fatal("This pane is not a table")
+	}
+
+	return func() tea.Msg {
+		region, err := client.S3.GetBucketRegion(row[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		marshalledRow := table.MarhsalRow(row)
+		marshalledRow["Region"] = region
+
+		return page.UpdateRowMsg{
+			Page:            m.Spec.Name,
+			PaneId:          m.GetPaneId("Buckets"),
+			Row:             table.UnmarhsalRow(marshalledRow),
+			PrimaryKeyIndex: 0,
+		}
 	}
 }
 
@@ -50,7 +78,16 @@ func (m *S3PageModel) Inspect(client data.Client) tea.Cmd {
 	if !ok {
 		log.Fatal("This pane is not a table")
 	}
+
 	row := table.GetMarshalledRow()
+
+	// If the region hasn't been found yet, we need to wait.
+	// An alternative idea might be to just fetch the region in GetObjects if it's missing at that
+	// point
+	if row["Region"] == data.LOADING_ALIAS {
+		return nil
+	}
+
 	changePageCmd := func() tea.Msg {
 		return page.ChangePageMsg{
 			NewPage:   "s3/objects",

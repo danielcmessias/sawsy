@@ -29,6 +29,13 @@ type BatchedNewRowsMsg struct {
 	Msgs []NewRowsMsg
 }
 
+type UpdateRowMsg struct {
+	Page            string
+	PaneId          int
+	Row             table.Row
+	PrimaryKeyIndex int
+}
+
 type ChangePageMsg struct {
 	NewPage     string // Id of page to switch to
 	FetchData   bool   // If true, clears and (re)fetches data on new page
@@ -64,6 +71,7 @@ type Page interface {
 	SetPageContext(context interface{})
 	GetSpec() PageSpec
 
+	GetPaneAt(index int) pane.Pane
 	GetCurrentPaneId() int
 
 	Inspect(client data.Client) tea.Cmd
@@ -217,6 +225,10 @@ func (m *Model) Update(client data.Client, msg tea.Msg) (tea.Cmd, bool) {
 	}
 
 	return tea.Batch(cmds...), false
+}
+
+func (m *Model) GetPaneAt(index int) pane.Pane {
+	return m.Panes[index]
 }
 
 func (m *Model) GetCurrentPaneId() int {

@@ -36,7 +36,7 @@ go build
 
 # Usage
 
-Make sure you have AWS credentials set. Press `?` to toggle help$.
+Make sure you have AWS credentials set. Press `?` to toggle help.
 
 To switch services press `s`. You can launch directly to a particular service like
 
