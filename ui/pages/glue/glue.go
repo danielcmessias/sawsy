@@ -64,7 +64,7 @@ func (m *GluePageModel) Inspect(client data.Client) tea.Cmd {
 	if !ok {
 		log.Fatal("This pane is not a table")
 	}
-	row := table.GetMarshalledRow()
+	row := table.GetCurrentRowMarshalled()
 	var nextPage string
 	var pageContext interface{}
 

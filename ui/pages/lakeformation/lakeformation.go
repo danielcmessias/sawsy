@@ -111,18 +111,18 @@ func (m *LakeFormationPageModel) Inspect(client data.Client) tea.Cmd {
 		log.Fatal("This pane is not a table")
 	}
 
-	row := table.GetMarshalledRow()
+	row := table.GetCurrentRowMarshalled()
 	var nextPage string
 	var pageContext interface{}
 
 	switch m.Tabs.CurrentTabId {
 	case m.GetPaneId("Databases"):
-		nextPage = "lakeformation/databases"
+		nextPage = "lakeformation/database"
 		pageContext = DatabasePageContext{
 			DatabaseName: row["Database"],
 		}
 	case m.GetPaneId("Tables"):
-		nextPage = "lakeformation/tables"
+		nextPage = "lakeformation/table"
 		pageContext = TablePageContext{
 			TableName:    row["Table"],
 			DatabaseName: row["Database"],

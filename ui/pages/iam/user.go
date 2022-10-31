@@ -69,7 +69,7 @@ func (m *UserPageModel) Inspect(client data.Client) tea.Cmd {
 
 	switch m.GetCurrentPaneId() {
 	case m.GetPaneId("Policies"):
-		row := table.GetMarshalledRow()
+		row := table.GetCurrentRowMarshalled()
 		return func() tea.Msg {
 			return page.ChangePageMsg{
 				NewPage:   "iam/policy",

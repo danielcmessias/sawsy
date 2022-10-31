@@ -23,20 +23,43 @@ func NewTablePage(ctx *context.ProgramContext) *TablePageModel {
 }
 
 func (m *TablePageModel) FetchData(client data.Client) tea.Cmd {
-	context := m.Context.(TablePageContext)
+	return tea.Batch(
+		m.fetchTableDetailsAndSchema(client),
+		m.fetchTableTags(client),
+	)
+}
+
+func (m *TablePageModel) fetchTableDetailsAndSchema(client data.Client) tea.Cmd {
 	return func() tea.Msg {
-		output, _ := client.LakeFormation.GetTable(context.TableName, context.DatabaseName)
-		var msgs []page.NewRowsMsg
-		for i, rows := range output {
-			msgs = append(msgs, page.NewRowsMsg{
-				Page:      m.Spec.Name,
-				PaneId:    i,
-				Rows:      rows,
-				Overwrite: true,
-			})
+		ctx := m.Context.(TablePageContext)
+		detailsRows, schemaRows, _ := client.LakeFormation.GetTableDetailsAndSchema(ctx.TableName, ctx.DatabaseName)
+
+		detailsRowsMsg := page.NewRowsMsg{
+			Page:   m.Spec.Name,
+			PaneId: m.GetPaneId("Details"),
+			Rows:   detailsRows,
 		}
+		schemaRowsMsg := page.NewRowsMsg{
+			Page:   m.Spec.Name,
+			PaneId: m.GetPaneId("Schema"),
+			Rows:   schemaRows,
+		}
+
 		return page.BatchedNewRowsMsg{
-			Msgs: msgs,
+			Msgs: []page.NewRowsMsg{detailsRowsMsg, schemaRowsMsg},
 		}
+	}
+}
+
+func (m *TablePageModel) fetchTableTags(client data.Client) tea.Cmd {
+	return func() tea.Msg {
+		ctx := m.Context.(TablePageContext)
+		rows, _ := client.LakeFormation.GetTableTags(ctx.TableName, ctx.DatabaseName)
+		msg := page.NewRowsMsg{
+			Page:   m.Spec.Name,
+			PaneId: m.GetPaneId("LF-Tags"),
+			Rows:   rows,
+		}
+		return msg
 	}
 }

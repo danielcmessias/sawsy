@@ -22,19 +22,32 @@ func NewDatabasePage(ctx *context.ProgramContext) *DatabasePageModel {
 }
 
 func (m *DatabasePageModel) FetchData(client data.Client) tea.Cmd {
+	return tea.Batch(
+		m.fetchDatabaseDetails(client),
+		m.fetchDatabaseTags(client),
+	)
+}
+
+func (m *DatabasePageModel) fetchDatabaseDetails(client data.Client) tea.Cmd {
 	return func() tea.Msg {
-		output, _ := client.LakeFormation.GetDatabase(m.Context.(DatabasePageContext).DatabaseName)
-		var msgs []page.NewRowsMsg
-		for i, rows := range output {
-			msgs = append(msgs, page.NewRowsMsg{
-				Page:      m.Spec.Name,
-				PaneId:    i,
-				Rows:      rows,
-				Overwrite: true,
-			})
+		rows, _ := client.LakeFormation.GetDatabaseDetails(m.Context.(DatabasePageContext).DatabaseName)
+		msg := page.NewRowsMsg{
+			Page:   m.Spec.Name,
+			PaneId: m.GetPaneId("Details"),
+			Rows:   rows,
 		}
-		return page.BatchedNewRowsMsg{
-			Msgs: msgs,
+		return msg
+	}
+}
+
+func (m *DatabasePageModel) fetchDatabaseTags(client data.Client) tea.Cmd {
+	return func() tea.Msg {
+		rows, _ := client.LakeFormation.GetDatabaseTags(m.Context.(DatabasePageContext).DatabaseName)
+		msg := page.NewRowsMsg{
+			Page:   m.Spec.Name,
+			PaneId: m.GetPaneId("LF-Tags"),
+			Rows:   rows,
 		}
+		return msg
 	}
 }

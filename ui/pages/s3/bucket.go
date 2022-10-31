@@ -117,7 +117,7 @@ func (m *BucketPageModel) Inspect(client data.Client) tea.Cmd {
 	}
 
 	context := m.Context.(BucketPageContext)
-	key := table.GetMarshalledRow()["Key"]
+	key := table.GetCurrentRowMarshalled()["Key"]
 	sanitizedPrefix := context.Prefix + key
 	sanitizedPrefix = strings.Replace(sanitizedPrefix, fmt.Sprintf("%s ", icons.FILE), "", 1)
 	sanitizedPrefix = strings.Replace(sanitizedPrefix, fmt.Sprintf("%s ", icons.FOLDER), "", 1)

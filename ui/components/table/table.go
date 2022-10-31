@@ -165,13 +165,8 @@ func (m *Model) GetCurrentRow() Row {
 	return m.filteredRows[m.rowsViewport.GetCurrItem()]
 }
 
-func (m *Model) GetMarshalledRow() map[string]string {
-	row := m.GetCurrentRow()
-	rowMap := make(map[string]string)
-	for i, col := range m.Columns {
-		rowMap[col.Title] = row[i]
-	}
-	return rowMap
+func (m *Model) GetCurrentRowMarshalled() map[string]string {
+	return m.MarhsalRow(m.GetCurrentRow())
 }
 
 func (m *Model) MarhsalRow(row Row) map[string]string {
@@ -182,7 +177,7 @@ func (m *Model) MarhsalRow(row Row) map[string]string {
 	return rowMap
 }
 
-func (m *Model) UnmarhsalRow(row map[string]string) Row {
+func (m *Model) UnmarshalRow(row map[string]string) Row {
 	rowArr := make(Row, len(m.Columns))
 	for i, col := range m.Columns {
 		rowArr[i] = row[col.Title]

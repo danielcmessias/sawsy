@@ -63,7 +63,7 @@ func (m *S3PageModel) fetchBucketRegion(client data.Client, row table.Row) tea.C
 		return page.UpdateRowMsg{
 			Page:            m.Spec.Name,
 			PaneId:          m.GetPaneId("Buckets"),
-			Row:             table.UnmarhsalRow(marshalledRow),
+			Row:             table.UnmarshalRow(marshalledRow),
 			PrimaryKeyIndex: 0,
 		}
 	}
@@ -79,7 +79,7 @@ func (m *S3PageModel) Inspect(client data.Client) tea.Cmd {
 		log.Fatal("This pane is not a table")
 	}
 
-	row := table.GetMarshalledRow()
+	row := table.GetCurrentRowMarshalled()
 
 	// If the region hasn't been found yet, we need to wait.
 	// An alternative idea might be to just fetch the region in GetObjects if it's missing at that

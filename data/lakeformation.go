@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/lakeformation"
 	lftypes "github.com/aws/aws-sdk-go-v2/service/lakeformation/types"
 	"github.com/danielcmessias/sawsy/ui/components/table"
-	"github.com/danielcmessias/sawsy/utils"
 )
 
 type LakeFormationClient struct {
@@ -190,79 +189,89 @@ func (c *LakeFormationClient) GetDataLakeLocations(nextToken *string) ([]table.R
 	return rows, output.NextToken, nil
 }
 
-func (c *LakeFormationClient) GetDatabase(databaseName string) ([][]table.Row, error) {
+func (c *LakeFormationClient) GetDatabaseDetails(databaseName string) ([]table.Row, error) {
 	input := glue.GetDatabaseInput{
 		Name: aws.String(databaseName),
 	}
 	output, err := c.glue.GetDatabase(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get database: %v", err)
+		log.Fatalf("unable to get LF database: %v", err)
 	}
 
-	var detailRows []table.Row
-	detailRows = append(detailRows, []string{"Name", utils.UseStr(output.Database.Name)})
-	detailRows = append(detailRows, []string{"Location", utils.UseStr(output.Database.LocationUri)})
-	detailRows = append(detailRows, []string{"Description", utils.UseStr(output.Database.Description)})
+	rows := []table.Row{
+		{"Name", aws.ToString(output.Database.Name)},
+		{"Location", aws.ToString(output.Database.LocationUri)},
+		{"Description", aws.ToString(output.Database.Description)},
+	}
 
-	lfTagInput := lakeformation.GetResourceLFTagsInput{
+	return rows, nil
+}
+
+func (c *LakeFormationClient) GetDatabaseTags(databaseName string) ([]table.Row, error) {
+	input := lakeformation.GetResourceLFTagsInput{
 		Resource: &lftypes.Resource{
 			Database: &lftypes.DatabaseResource{
 				Name: aws.String(databaseName),
 			},
 		},
-		ShowAssignedLFTags: utils.BoolPtr(true),
+		ShowAssignedLFTags: aws.Bool(true),
 	}
-	lfTagsOutput, err := c.lf.GetResourceLFTags(c.ctx, &lfTagInput)
+	output, err := c.lf.GetResourceLFTags(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get database: %v", err)
+		log.Fatalf("unable to get LF database tags: %v", err)
 	}
-	var lfTagRows []table.Row
-	for _, t := range lfTagsOutput.LFTagOnDatabase {
-		lfTagRows = append(lfTagRows, []string{utils.UseStr(t.TagKey), strings.Join(t.TagValues, ",")})
+	var rows []table.Row
+	for _, t := range output.LFTagOnDatabase {
+		rows = append(rows, []string{aws.ToString(t.TagKey), strings.Join(t.TagValues, ",")})
 	}
 
-	return [][]table.Row{detailRows, lfTagRows}, nil
+	return rows, nil
 }
 
-func (c *LakeFormationClient) GetTable(tableName string, databaseName string) ([][]table.Row, error) {
+func (c *LakeFormationClient) GetTableDetailsAndSchema(tableName string, databaseName string) ([]table.Row, []table.Row, error) {
 	input := glue.GetTableInput{
 		DatabaseName: aws.String(databaseName),
 		Name:         aws.String(tableName),
 	}
 	output, err := c.glue.GetTable(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get table: %v", err)
+		log.Fatalf("unable to get LF table: %v", err)
 	}
 
-	var detailRows []table.Row
-	detailRows = append(detailRows, []string{"Table Name", utils.UseStr(output.Table.Name)})
-	detailRows = append(detailRows, []string{"Database Name", utils.UseStr(output.Table.DatabaseName)})
-	detailRows = append(detailRows, []string{"Location", utils.UseStr(output.Table.StorageDescriptor.Location)})
-	detailRows = append(detailRows, []string{"Description", utils.UseStr(output.Table.Description)})
-	detailRows = append(detailRows, []string{"Last Updated", output.Table.UpdateTime.String()})
+	detailsRows := []table.Row{
+		{"Table Name", aws.ToString(output.Table.Name)},
+		{"Database Name", aws.ToString(output.Table.DatabaseName)},
+		{"Location", aws.ToString(output.Table.StorageDescriptor.Location)},
+		{"Description", aws.ToString(output.Table.Description)},
+		{"Last Updated", formatTime(output.Table.UpdateTime)},
+	}
 
 	var schemaRows []table.Row
 	for i, c := range output.Table.StorageDescriptor.Columns {
-		schemaRows = append(schemaRows, []string{strconv.Itoa(i + 1), utils.UseStr(c.Name), utils.UseStr(c.Type)})
+		schemaRows = append(schemaRows, []string{strconv.Itoa(i + 1), aws.ToString(c.Name), aws.ToString(c.Type)})
 	}
 
-	lfTagInput := lakeformation.GetResourceLFTagsInput{
+	return detailsRows, schemaRows, nil
+}
+
+func (c *LakeFormationClient) GetTableTags(tableName string, databaseName string) ([]table.Row, error) {
+	input := lakeformation.GetResourceLFTagsInput{
 		Resource: &lftypes.Resource{
 			Table: &lftypes.TableResource{
 				DatabaseName: aws.String(databaseName),
 				Name:         aws.String(tableName),
 			},
 		},
-		ShowAssignedLFTags: utils.BoolPtr(true),
+		ShowAssignedLFTags: aws.Bool(true),
 	}
-	lfTagsOutput, err := c.lf.GetResourceLFTags(c.ctx, &lfTagInput)
+	output, err := c.lf.GetResourceLFTags(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get database: %v", err)
+		log.Fatalf("unable to get LF table tags: %v", err)
 	}
-	var lfTagRows []table.Row
-	for _, t := range lfTagsOutput.LFTagsOnTable {
-		lfTagRows = append(lfTagRows, []string{utils.UseStr(t.TagKey), strings.Join(t.TagValues, ",")})
+	var rows []table.Row
+	for _, t := range output.LFTagsOnTable {
+		rows = append(rows, []string{aws.ToString(t.TagKey), strings.Join(t.TagValues, ",")})
 	}
 
-	return [][]table.Row{detailRows, schemaRows, lfTagRows}, nil
+	return rows, nil
 }

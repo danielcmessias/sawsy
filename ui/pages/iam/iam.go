@@ -63,7 +63,7 @@ func (m *IAMPageModel) Inspect(client data.Client) tea.Cmd {
 		log.Fatal("This pane is not a table")
 	}
 
-	row := table.GetMarshalledRow()
+	row := table.GetCurrentRowMarshalled()
 
 	switch m.GetCurrentPaneId() {
 	case m.GetPaneId("Users"):

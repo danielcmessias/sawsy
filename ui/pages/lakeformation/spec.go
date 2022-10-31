@@ -125,7 +125,7 @@ var lakeFormationPageSpec = page.PageSpec{
 }
 
 var databasePageSpec = page.PageSpec{
-	Name: "lakeformation/databases",
+	Name: "lakeformation/database",
 	PaneSpecs: []pane.PaneSpec{
 		table.TableSpec{
 			BaseSpec: pane.BaseSpec{
@@ -159,7 +159,7 @@ var databasePageSpec = page.PageSpec{
 }
 
 var tablePageSpec = page.PageSpec{
-	Name: "lakeformation/tables",
+	Name: "lakeformation/table",
 	PaneSpecs: []pane.PaneSpec{
 		table.TableSpec{
 			BaseSpec: pane.BaseSpec{
