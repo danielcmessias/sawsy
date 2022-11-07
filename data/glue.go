@@ -36,6 +36,10 @@ func (c *GlueClient) GetJobsRows(nextToken *string) ([]table.Row, *string, error
 		log.Fatalf("unable to get Glue jobs: %v", err)
 	}
 
+	if len(listOutput.JobNames) == 0 {
+		return nil, nil, nil
+	}
+
 	getInput := glue.BatchGetJobsInput{
 		JobNames: listOutput.JobNames,
 	}
@@ -66,6 +70,10 @@ func (c *GlueClient) GetCrawlersRows(nextToken *string) ([]table.Row, *string, e
 	listOutput, err := c.glue.ListCrawlers(c.ctx, &listInput)
 	if err != nil {
 		log.Fatalf("unable to get Glue jobs: %v", err)
+	}
+
+	if len(listOutput.CrawlerNames) == 0 {
+		return nil, nil, nil
 	}
 
 	getInput := glue.BatchGetCrawlersInput{
