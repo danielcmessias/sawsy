@@ -1,6 +1,8 @@
 package iam
 
 import (
+	"log"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/danielcmessias/sawsy/data"
 	"github.com/danielcmessias/sawsy/ui/components/code"
@@ -27,25 +29,30 @@ func NewPolicyPage(ctx *context.ProgramContext) *PolicyPageModel {
 	}
 }
 
-func (m *PolicyPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *PolicyPageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchPolicyPermissions(client),
 	)
 }
 
-func (m *PolicyPageModel) fetchPolicyPermissions(client data.Client) tea.Cmd {
+func (m *PolicyPageModel) fetchPolicyPermissions(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
 		context := m.Context.(PolicyPageContext)
 
 		var policy string
+		var err error
+
 		if context.PolicyArn != "" {
-			policy, _ = client.IAM.GetManagedPolicy(context.PolicyArn)
+			policy, err = client.IAM.GetManagedPolicy(context.PolicyArn)
 		} else {
 			if context.UserName != "" {
-				policy, _ = client.IAM.GetInlineUserPolicy(context.UserName, context.PolicyName)
+				policy, err = client.IAM.GetInlineUserPolicy(context.UserName, context.PolicyName)
 			} else {
-				policy, _ = client.IAM.GetInlineRolePolicy(context.RoleName, context.PolicyName)
+				policy, err = client.IAM.GetInlineRolePolicy(context.RoleName, context.PolicyName)
 			}
+		}
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		msg := code.NewCodeContentMsg{

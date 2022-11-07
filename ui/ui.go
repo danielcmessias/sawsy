@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -25,7 +26,7 @@ import (
 
 type Model struct {
 	config config.Config
-	client data.Client
+	client *data.Client
 	ctx    *context.ProgramContext
 	help   help.Model
 	keys   utils.KeyMap
@@ -40,11 +41,20 @@ type PageVisit struct {
 	Context  interface{}
 }
 
-func NewModel(config config.Config, firstPage string) Model {
-	client := data.NewClient()
+func NewModel(config config.Config, firstPage string) (Model, error) {
+	client, err := data.NewClient()
+	if err != nil {
+		return Model{}, fmt.Errorf("error creating new data client: %w", err)
+	}
+
+	awsAccountId, err := client.GetCurrentAWSAccountId()
+	if err != nil {
+		return Model{}, err
+	}
+
 	ctx := &context.ProgramContext{
 		Config:       &config,
-		AwsAccountId: client.GetCurrentAWSAccountId(),
+		AwsAccountId: awsAccountId,
 		AwsService:   firstPage,
 		Keys:         utils.Keys,
 	}
@@ -81,7 +91,7 @@ func NewModel(config config.Config, firstPage string) Model {
 		keys:        utils.Keys,
 		pages:       pages,
 		currentPage: firstPage,
-	}
+	}, nil
 }
 
 type initMsg struct{}

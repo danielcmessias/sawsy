@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -30,7 +29,7 @@ func (c *S3Client) GetBuckets() ([]table.Row, error) {
 	input := s3.ListBucketsInput{}
 	output, err := c.s3.ListBuckets(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get databases: %v", err)
+		return nil, fmt.Errorf("error listing buckets: %w", err)
 	}
 
 	var rows []table.Row
@@ -48,7 +47,7 @@ func (c *S3Client) GetBuckets() ([]table.Row, error) {
 func (c *S3Client) GetBucketRegion(bucket string) (string, error) {
 	region, err := manager.GetBucketRegion(c.ctx, c.s3, bucket)
 	if err != nil {
-		log.Fatalf("Error getting region for bucket %s, %v", bucket, err)
+		return "", fmt.Errorf("error getting region for bucket %s: %w", bucket, err)
 	}
 	return region, nil
 }
@@ -59,7 +58,7 @@ func (c *S3Client) GetBucketPolicy(bucket string, region string) (string, error)
 	}
 	output, err := c.s3.GetBucketPolicy(c.ctx, &input, func(options *s3.Options) { options.Region = region })
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error getting policy for bucket %s: %w", bucket, err)
 	}
 
 	return formatJson(*output.Policy), nil
@@ -71,7 +70,7 @@ func (c *S3Client) GetBucketTags(bucket string, region string) ([]table.Row, err
 	}
 	output, err := c.s3.GetBucketTagging(c.ctx, &input, func(options *s3.Options) { options.Region = region })
 	if err != nil {
-		log.Fatalf("unable to get bucket tags: %v", err)
+		return nil, fmt.Errorf("error getting tags for bucket %s: %w", bucket, err)
 	}
 
 	var rows []table.Row
@@ -94,7 +93,7 @@ func (c *S3Client) GetObjects(bucket string, region string, prefix string, nextT
 
 	output, err := c.s3.ListObjectsV2(c.ctx, &input, func(options *s3.Options) { options.Region = region })
 	if err != nil {
-		log.Fatalf("unable to get objects: %v", err)
+		return nil, nil, fmt.Errorf("error listing objects for bucket %s with prefix %s: %w", bucket, prefix, err)
 	}
 
 	var rows []table.Row
@@ -134,7 +133,7 @@ func (c *S3Client) GetObjectProperties(bucket string, key string, region string)
 	}
 	headOutput, err := c.s3.HeadObject(c.ctx, &headInput, func(options *s3.Options) { options.Region = region })
 	if err != nil {
-		log.Fatalf("unable to get object properties: %v", err)
+		return nil, fmt.Errorf("error getting properties for object s3://%s/%s: %w", bucket, key, err)
 	}
 
 	rows = append(rows, table.Row{"Last Modified", formatTime(headOutput.LastModified)})
@@ -146,7 +145,7 @@ func (c *S3Client) GetObjectProperties(bucket string, key string, region string)
 	}
 	aclOutput, err := c.s3.GetObjectAcl(c.ctx, &aclInput, func(options *s3.Options) { options.Region = region })
 	if err != nil {
-		log.Fatalf("unable to get object acl: %v", err)
+		return nil, fmt.Errorf("error getting ACL for object s3://%s/%s: %w", bucket, key, err)
 	}
 
 	rows = append(rows, table.Row{"Owner", aws.ToString(aclOutput.Owner.DisplayName)})

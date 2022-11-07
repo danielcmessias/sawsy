@@ -22,7 +22,7 @@ func NewInstancePage(ctx *context.ProgramContext) *InstancePageModel {
 	}
 }
 
-func (m *InstancePageModel) FetchData(client data.Client) tea.Cmd {
+func (m *InstancePageModel) FetchData(client *data.Client) tea.Cmd {
 	cmds := []tea.Cmd{
 		m.fetchDetails(client),
 		m.fetchTags(client),
@@ -34,7 +34,7 @@ func (m *InstancePageModel) FetchData(client data.Client) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m *InstancePageModel) fetchDetails(client data.Client) tea.Cmd {
+func (m *InstancePageModel) fetchDetails(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
 		rows, _ := client.RDS.GetInstanceDetails(m.Context.(InstancePageContext).InstanceId)
 
@@ -47,7 +47,7 @@ func (m *InstancePageModel) fetchDetails(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *InstancePageModel) fetchTags(client data.Client) tea.Cmd {
+func (m *InstancePageModel) fetchTags(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
 		rows, _ := client.RDS.GetInstanceTags(m.Context.(InstancePageContext).InstanceId)
 
@@ -60,7 +60,7 @@ func (m *InstancePageModel) fetchTags(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *InstancePageModel) fetchMetric(client data.Client, galleryPaneId int, metric string, valueFormatter func(float64) float64) tea.Cmd {
+func (m *InstancePageModel) fetchMetric(client *data.Client, galleryPaneId int, metric string, valueFormatter func(float64) float64) tea.Cmd {
 	return func() tea.Msg {
 		data, _ := client.RDS.GetMetric(m.Context.(InstancePageContext).InstanceId, metric)
 

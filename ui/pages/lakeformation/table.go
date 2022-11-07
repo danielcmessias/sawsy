@@ -22,14 +22,14 @@ func NewTablePage(ctx *context.ProgramContext) *TablePageModel {
 	}
 }
 
-func (m *TablePageModel) FetchData(client data.Client) tea.Cmd {
+func (m *TablePageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchTableDetailsAndSchema(client),
 		m.fetchTableTags(client),
 	)
 }
 
-func (m *TablePageModel) fetchTableDetailsAndSchema(client data.Client) tea.Cmd {
+func (m *TablePageModel) fetchTableDetailsAndSchema(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
 		ctx := m.Context.(TablePageContext)
 		detailsRows, schemaRows, _ := client.LakeFormation.GetTableDetailsAndSchema(ctx.TableName, ctx.DatabaseName)
@@ -51,7 +51,7 @@ func (m *TablePageModel) fetchTableDetailsAndSchema(client data.Client) tea.Cmd 
 	}
 }
 
-func (m *TablePageModel) fetchTableTags(client data.Client) tea.Cmd {
+func (m *TablePageModel) fetchTableTags(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
 		ctx := m.Context.(TablePageContext)
 		rows, _ := client.LakeFormation.GetTableTags(ctx.TableName, ctx.DatabaseName)

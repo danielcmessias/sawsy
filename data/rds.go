@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
@@ -33,7 +32,7 @@ func (c *RDSClient) GetDBInstances(nextToken *string) ([]table.Row, *string, err
 	}
 	output, err := c.rds.DescribeDBInstances(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to list db instances: %v", err)
+		return nil, nil, fmt.Errorf("error getting db instances: %w", err)
 	}
 
 	var rows []table.Row
@@ -57,7 +56,7 @@ func (c *RDSClient) GetInstanceDetails(instance string) ([]table.Row, error) {
 	}
 	output, err := c.rds.DescribeDBInstances(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get db instance: %v", err)
+		return nil, fmt.Errorf("error getting db instance %s details: %w", instance, err)
 	}
 
 	i := output.DBInstances[0]
@@ -85,7 +84,7 @@ func (c *RDSClient) GetInstanceTags(instance string) ([]table.Row, error) {
 	}
 	output, err := c.rds.DescribeDBInstances(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get db instance tags: %v", err)
+		return nil, fmt.Errorf("error getting db instance %s details: %w", instance, err)
 	}
 
 	var rows []table.Row
@@ -120,7 +119,7 @@ func (c *RDSClient) GetMetric(instance string, metricName string) ([]float64, er
 	}
 	output, err := c.cloudwatch.GetMetricStatistics(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get metric: %v", err)
+		return nil, fmt.Errorf("error getting metric %s for instance %s: %w", metricName, instance, err)
 	}
 
 	datapoints := make([]float64, len(output.Datapoints))

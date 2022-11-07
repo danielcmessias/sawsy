@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
@@ -33,7 +32,7 @@ func (c *GlueClient) GetJobsRows(nextToken *string) ([]table.Row, *string, error
 	}
 	listOutput, err := c.glue.ListJobs(c.ctx, &listInput)
 	if err != nil {
-		log.Fatalf("unable to get Glue jobs: %v", err)
+		return nil, nil, fmt.Errorf("error listing Glue jobs: %w", err)
 	}
 
 	if len(listOutput.JobNames) == 0 {
@@ -45,7 +44,7 @@ func (c *GlueClient) GetJobsRows(nextToken *string) ([]table.Row, *string, error
 	}
 	getOutput, err := c.glue.BatchGetJobs(c.ctx, &getInput)
 	if err != nil {
-		log.Fatalf("unable to get Glue jobs: %v", err)
+		return nil, nil, fmt.Errorf("error getting Glue jobs: %w", err)
 	}
 
 	var rows []table.Row
@@ -69,7 +68,7 @@ func (c *GlueClient) GetCrawlersRows(nextToken *string) ([]table.Row, *string, e
 	}
 	listOutput, err := c.glue.ListCrawlers(c.ctx, &listInput)
 	if err != nil {
-		log.Fatalf("unable to get Glue jobs: %v", err)
+		return nil, nil, fmt.Errorf("error listing Glue crawlers: %w", err)
 	}
 
 	if len(listOutput.CrawlerNames) == 0 {
@@ -81,7 +80,7 @@ func (c *GlueClient) GetCrawlersRows(nextToken *string) ([]table.Row, *string, e
 	}
 	getOutput, err := c.glue.BatchGetCrawlers(c.ctx, &getInput)
 	if err != nil {
-		log.Fatalf("unable to get Glue crawlers: %v", err)
+		return nil, nil, fmt.Errorf("error getting Glue crawlers: %w", err)
 	}
 
 	metricsInput := glue.GetCrawlerMetricsInput{
@@ -89,11 +88,11 @@ func (c *GlueClient) GetCrawlersRows(nextToken *string) ([]table.Row, *string, e
 	}
 	metricsOutput, err := c.glue.GetCrawlerMetrics(c.ctx, &metricsInput)
 	if err != nil {
-		log.Fatalf("unable to get Glue crawlers: %v", err)
+		return nil, nil, fmt.Errorf("error getting Glue crawler metrics: %w", err)
 	}
 
 	if len(getOutput.Crawlers) != len(metricsOutput.CrawlerMetricsList) {
-		log.Fatalf("GetCrawlers and GetCrawlerMetrics have different lengths.")
+		return nil, nil, fmt.Errorf("inconsistent number of crawler and crawler metrics: %w", err)
 	}
 
 	var rows []table.Row
@@ -123,7 +122,7 @@ func (c *GlueClient) GetJobDetails(jobName string) ([]table.Row, error) {
 	}
 	output, err := c.glue.GetJob(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get Glue job details: %v", err)
+		return nil, fmt.Errorf("error getting Glue job details: %w", err)
 	}
 
 	job := output.Job
@@ -150,7 +149,7 @@ func (c *GlueClient) GetJobRuns(jobName string) ([]table.Row, error) {
 	}
 	output, err := c.glue.GetJobRuns(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get Glue job runs: %v", err)
+		return nil, fmt.Errorf("error getting Glue job runs: %w", err)
 	}
 
 	var rows []table.Row
@@ -172,13 +171,12 @@ func (c *GlueClient) GetJobScript(jobName string) (string, string, error) {
 	}
 	jobOutput, err := c.glue.GetJob(c.ctx, &jobInput)
 	if err != nil {
-		log.Fatalf("unable to get Glue job details: %v", err)
+		return "", "", fmt.Errorf("error getting Glue job: %w", err)
 	}
 
 	scriptLocation := aws.ToString(jobOutput.Job.Command.ScriptLocation)
 	u, _ := url.Parse(scriptLocation)
 
-	// log.Fatalf("scriptLocation: %s, bucket: %s, key: %s", scriptLocation, u.Host, u.Path)
 	objInput := s3.GetObjectInput{
 		Bucket: aws.String(u.Host),
 		Key:    aws.String(u.Path[1:]),
@@ -191,7 +189,7 @@ func (c *GlueClient) GetJobScript(jobName string) (string, string, error) {
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(objOutput.Body)
 	if err != nil {
-		log.Fatalf("unable to get Glue job details: %v", err)
+		return "", "", fmt.Errorf("error reading Glue job script file contents: %w", err)
 	}
 
 	return buf.String(), scriptLocation, nil

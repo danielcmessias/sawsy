@@ -20,16 +20,20 @@ func NewIAMPage(ctx *context.ProgramContext) *IAMPageModel {
 	}
 }
 
-func (m *IAMPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *IAMPageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchUsers(client, nil),
 		m.fetchRoles(client, nil),
 	)
 }
 
-func (m *IAMPageModel) fetchUsers(client data.Client, nextToken *string) tea.Cmd {
+func (m *IAMPageModel) fetchUsers(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.IAM.GetUsers(nextToken)
+		rows, nextToken, err := client.IAM.GetUsers(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Users"),
@@ -42,9 +46,13 @@ func (m *IAMPageModel) fetchUsers(client data.Client, nextToken *string) tea.Cmd
 	}
 }
 
-func (m *IAMPageModel) fetchRoles(client data.Client, nextToken *string) tea.Cmd {
+func (m *IAMPageModel) fetchRoles(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.IAM.GetRoles(nextToken)
+		rows, nextToken, err := client.IAM.GetRoles(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Roles"),
@@ -57,7 +65,7 @@ func (m *IAMPageModel) fetchRoles(client data.Client, nextToken *string) tea.Cmd
 	}
 }
 
-func (m *IAMPageModel) Inspect(client data.Client) tea.Cmd {
+func (m *IAMPageModel) Inspect(client *data.Client) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")

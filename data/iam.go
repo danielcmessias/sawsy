@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net/url"
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
@@ -28,7 +28,7 @@ func (c *IAMClient) GetUsers(nextToken *string) ([]table.Row, *string, error) {
 	}
 	output, err := c.iam.ListUsers(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to list users: %v", err)
+		return nil, nil, fmt.Errorf("error listing IAM users: %w", err)
 	}
 
 	var rows []table.Row
@@ -55,7 +55,7 @@ func (c *IAMClient) GetRoles(nextToken *string) ([]table.Row, *string, error) {
 	}
 	output, err := c.iam.ListRoles(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to list roles: %v", err)
+		return nil, nil, fmt.Errorf("error listing IAM roles: %w", err)
 	}
 
 	var rows []table.Row
@@ -76,7 +76,7 @@ func (c *IAMClient) GetUserPolicies(userName string, nextToken *string) ([]table
 	}
 	outputAttached, err := c.iam.ListAttachedUserPolicies(c.ctx, &inputAttached)
 	if err != nil {
-		log.Fatalf("unable to list attached user policies: %v", err)
+		return nil, nil, fmt.Errorf("error listing IAM policies attached to user %s: %w", userName, err)
 	}
 
 	inputInline := iam.ListUserPoliciesInput{
@@ -85,7 +85,7 @@ func (c *IAMClient) GetUserPolicies(userName string, nextToken *string) ([]table
 	}
 	outputInline, err := c.iam.ListUserPolicies(c.ctx, &inputInline)
 	if err != nil {
-		log.Fatalf("unable to list user policies: %v", err)
+		return nil, nil, fmt.Errorf("error listing inline IAM policies for user %s: %w", userName, err)
 	}
 
 	var rows []table.Row
@@ -114,7 +114,7 @@ func (c *IAMClient) GetUserTags(userName string, nextToken *string) ([]table.Row
 	}
 	output, err := c.iam.ListUserTags(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to list user tags: %v", err)
+		return nil, nil, fmt.Errorf("error listing tags for IAM user %s: %w", userName, err)
 	}
 
 	var rows []table.Row
@@ -134,7 +134,7 @@ func (c *IAMClient) GetRolePolicies(roleName string, nextToken *string) ([]table
 	}
 	outputAttached, err := c.iam.ListAttachedRolePolicies(c.ctx, &inputAttached)
 	if err != nil {
-		log.Fatalf("unable to list attached user policies: %v", err)
+		return nil, nil, fmt.Errorf("error listing IAM policies attached to role %s: %w", roleName, err)
 	}
 
 	inputInline := iam.ListRolePoliciesInput{
@@ -143,7 +143,7 @@ func (c *IAMClient) GetRolePolicies(roleName string, nextToken *string) ([]table
 	}
 	outputInline, err := c.iam.ListRolePolicies(c.ctx, &inputInline)
 	if err != nil {
-		log.Fatalf("unable to list user policies: %v", err)
+		return nil, nil, fmt.Errorf("error listing inline IAM policies for role %s: %w", roleName, err)
 	}
 
 	var rows []table.Row
@@ -172,7 +172,7 @@ func (c *IAMClient) GetRoleTags(roleName string, nextToken *string) ([]table.Row
 	}
 	output, err := c.iam.ListRoleTags(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to list user tags: %v", err)
+		return nil, nil, fmt.Errorf("error listing tags for IAM role %s: %w", roleName, err)
 	}
 
 	var rows []table.Row
@@ -192,7 +192,7 @@ func (c *IAMClient) GetManagedPolicy(policyArn string) (string, error) {
 	}
 	output, err := c.iam.GetPolicy(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get IAM policy: %v", err)
+		return "", fmt.Errorf("error getting managed IAM policy %s: %w", policyArn, err)
 	}
 
 	inputVersion := iam.GetPolicyVersionInput{
@@ -201,12 +201,12 @@ func (c *IAMClient) GetManagedPolicy(policyArn string) (string, error) {
 	}
 	outputVersion, err := c.iam.GetPolicyVersion(c.ctx, &inputVersion)
 	if err != nil {
-		log.Fatalf("unable to get IAM policy version: %v", err)
+		return "", fmt.Errorf("error getting managed IAM policy version for policy %s: %w", policyArn, err)
 	}
 
 	decodedDocument, err := url.QueryUnescape(aws.ToString(outputVersion.PolicyVersion.Document))
 	if err != nil {
-		log.Fatalf("unable to URL decode IAM policy document: %v", err)
+		return "", fmt.Errorf("error URL decoding managed IAM policy document: %w", err)
 	}
 
 	return formatJson(decodedDocument), nil
@@ -219,12 +219,12 @@ func (c *IAMClient) GetInlineUserPolicy(userName string, policyName string) (str
 	}
 	output, err := c.iam.GetUserPolicy(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get IAM user policy: %v", err)
+		return "", fmt.Errorf("error getting inline IAM policy %s for user %s: %w", policyName, userName, err)
 	}
 
 	decodedDocument, err := url.QueryUnescape(aws.ToString(output.PolicyDocument))
 	if err != nil {
-		log.Fatalf("unable to URL decode IAM policy document: %v", err)
+		return "", fmt.Errorf("error URL decoding inline IAM policy document: %w", err)
 	}
 
 	return formatJson(decodedDocument), nil
@@ -237,12 +237,12 @@ func (c *IAMClient) GetInlineRolePolicy(roleName string, policyName string) (str
 	}
 	output, err := c.iam.GetRolePolicy(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get IAM user policy: %v", err)
+		return "", fmt.Errorf("error getting inline IAM policy %s for role %s: %w", policyName, roleName, err)
 	}
 
 	decodedDocument, err := url.QueryUnescape(aws.ToString(output.PolicyDocument))
 	if err != nil {
-		log.Fatalf("unable to URL decode IAM policy document: %v", err)
+		return "", fmt.Errorf("error URL decoding inline IAM policy document: %w", err)
 	}
 
 	return formatJson(decodedDocument), nil
@@ -254,12 +254,12 @@ func (c *IAMClient) GetAssumeRolePolicy(roleName string) (string, error) {
 	}
 	output, err := c.iam.GetRole(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get IAM assume role policy: %v", err)
+		return "", fmt.Errorf("error getting IAM assume role %s: %w", roleName, err)
 	}
 
 	decodedDocument, err := url.QueryUnescape(aws.ToString(output.Role.AssumeRolePolicyDocument))
 	if err != nil {
-		log.Fatalf("unable to URL decode IAM policy document: %v", err)
+		return "", fmt.Errorf("error URL decoding IAM assume role policy document: %w", err)
 	}
 
 	return formatJson(decodedDocument), nil

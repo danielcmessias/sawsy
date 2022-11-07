@@ -18,7 +18,10 @@ func main() {
 
 	config, _ := config.ReadConfig()
 
-	m := ui.NewModel(config, firstPage)
+	m, err := ui.NewModel(config, firstPage)
+	if err != nil {
+		log.Fatalf("Error creating UI model: %v", err)
+	}
 	p := tea.NewProgram(
 		m,
 		tea.WithAltScreen(),

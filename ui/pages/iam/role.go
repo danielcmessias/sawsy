@@ -25,7 +25,7 @@ func NewRolePage(ctx *context.ProgramContext) *RolePageModel {
 	}
 }
 
-func (m *RolePageModel) FetchData(client data.Client) tea.Cmd {
+func (m *RolePageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchRolePolicies(client, nil),
 		m.fetchAssumeRolePolicy(client),
@@ -33,9 +33,13 @@ func (m *RolePageModel) FetchData(client data.Client) tea.Cmd {
 	)
 }
 
-func (m *RolePageModel) fetchRolePolicies(client data.Client, nextToken *string) tea.Cmd {
+func (m *RolePageModel) fetchRolePolicies(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.IAM.GetRolePolicies(m.Context.(RolePageContext).RoleName, nextToken)
+		rows, nextToken, err := client.IAM.GetRolePolicies(m.Context.(RolePageContext).RoleName, nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Policies"),
@@ -48,9 +52,13 @@ func (m *RolePageModel) fetchRolePolicies(client data.Client, nextToken *string)
 	}
 }
 
-func (m *RolePageModel) fetchAssumeRolePolicy(client data.Client) tea.Cmd {
+func (m *RolePageModel) fetchAssumeRolePolicy(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
-		policy, _ := client.IAM.GetAssumeRolePolicy(m.Context.(RolePageContext).RoleName)
+		policy, err := client.IAM.GetAssumeRolePolicy(m.Context.(RolePageContext).RoleName)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := code.NewCodeContentMsg{
 			Page:     m.Spec.Name,
 			PaneId:   m.GetPaneId("Trust Relationships"),
@@ -61,9 +69,13 @@ func (m *RolePageModel) fetchAssumeRolePolicy(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *RolePageModel) fetchRoleTags(client data.Client, nextToken *string) tea.Cmd {
+func (m *RolePageModel) fetchRoleTags(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.IAM.GetRoleTags(m.Context.(RolePageContext).RoleName, nextToken)
+		rows, nextToken, err := client.IAM.GetRoleTags(m.Context.(RolePageContext).RoleName, nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Tags"),
@@ -76,7 +88,7 @@ func (m *RolePageModel) fetchRoleTags(client data.Client, nextToken *string) tea
 	}
 }
 
-func (m *RolePageModel) Inspect(client data.Client) tea.Cmd {
+func (m *RolePageModel) Inspect(client *data.Client) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")

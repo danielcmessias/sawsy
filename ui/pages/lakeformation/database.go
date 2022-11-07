@@ -21,14 +21,14 @@ func NewDatabasePage(ctx *context.ProgramContext) *DatabasePageModel {
 	}
 }
 
-func (m *DatabasePageModel) FetchData(client data.Client) tea.Cmd {
+func (m *DatabasePageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchDatabaseDetails(client),
 		m.fetchDatabaseTags(client),
 	)
 }
 
-func (m *DatabasePageModel) fetchDatabaseDetails(client data.Client) tea.Cmd {
+func (m *DatabasePageModel) fetchDatabaseDetails(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
 		rows, _ := client.LakeFormation.GetDatabaseDetails(m.Context.(DatabasePageContext).DatabaseName)
 		msg := page.NewRowsMsg{
@@ -40,7 +40,7 @@ func (m *DatabasePageModel) fetchDatabaseDetails(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *DatabasePageModel) fetchDatabaseTags(client data.Client) tea.Cmd {
+func (m *DatabasePageModel) fetchDatabaseTags(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
 		rows, _ := client.LakeFormation.GetDatabaseTags(m.Context.(DatabasePageContext).DatabaseName)
 		msg := page.NewRowsMsg{

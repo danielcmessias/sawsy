@@ -20,15 +20,19 @@ func NewLambdaPage(ctx *context.ProgramContext) *LambdaPageModel {
 	}
 }
 
-func (m *LambdaPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *LambdaPageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchFunctions(client, nil),
 	)
 }
 
-func (m *LambdaPageModel) fetchFunctions(client data.Client, nextToken *string) tea.Cmd {
+func (m *LambdaPageModel) fetchFunctions(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.Lambda.GetFunctions(nextToken)
+		rows, nextToken, err := client.Lambda.GetFunctions(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Functions"),
@@ -41,7 +45,7 @@ func (m *LambdaPageModel) fetchFunctions(client data.Client, nextToken *string) 
 	}
 }
 
-func (m *LambdaPageModel) Inspect(client data.Client) tea.Cmd {
+func (m *LambdaPageModel) Inspect(client *data.Client) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")

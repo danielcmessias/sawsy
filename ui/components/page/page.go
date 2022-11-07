@@ -63,7 +63,7 @@ type Page interface {
 	View() string
 	NextTab() int
 	PrevTab() int
-	FetchData(client data.Client) tea.Cmd
+	FetchData(client *data.Client) tea.Cmd
 	ClearData()
 	AppendRows(tabId int, rows []table.Row)
 	ClearRows(tabId int)
@@ -74,9 +74,9 @@ type Page interface {
 	GetPaneAt(index int) pane.Pane
 	GetCurrentPaneId() int
 
-	Inspect(client data.Client) tea.Cmd
+	Inspect(client *data.Client) tea.Cmd
 
-	Update(data.Client, tea.Msg) (cmd tea.Cmd, consumed bool)
+	Update(client *data.Client, msg tea.Msg) (cmd tea.Cmd, consumed bool)
 
 	Hide() // Called when the page is no longer visible
 	SetSize(width int, height int)
@@ -150,7 +150,7 @@ func (m *Model) ClearRows(tabId int) {
 	table.ClearRows()
 }
 
-func (m *Model) FetchData(client data.Client) tea.Cmd {
+func (m *Model) FetchData(client *data.Client) tea.Cmd {
 	return nil
 }
 
@@ -185,12 +185,12 @@ func (m *Model) GetPaneId(paneName string) int {
 	return -1
 }
 
-func (m *Model) Inspect(client data.Client) tea.Cmd {
+func (m *Model) Inspect(client *data.Client) tea.Cmd {
 	// Not implemented
 	return nil
 }
 
-func (m *Model) Update(client data.Client, msg tea.Msg) (tea.Cmd, bool) {
+func (m *Model) Update(client *data.Client, msg tea.Msg) (tea.Cmd, bool) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 

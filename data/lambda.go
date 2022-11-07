@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
@@ -33,7 +32,7 @@ func (c *LambdaClient) GetFunctions(nextToken *string) ([]table.Row, *string, er
 	}
 	output, err := c.lambda.ListFunctions(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to list lambda functions, %v", err)
+		return nil, nil, fmt.Errorf("error listing lambda functions: %w", err)
 	}
 
 	var rows []table.Row
@@ -58,7 +57,7 @@ func (c *LambdaClient) GetFunctionDetails(functionName string) ([]table.Row, err
 	}
 	output, err := c.lambda.GetFunction(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get lambda function details, %v", err)
+		return nil, fmt.Errorf("error getting lambda function %s details: %w", functionName, err)
 	}
 
 	cfg := output.Configuration
@@ -105,7 +104,7 @@ func (c *LambdaClient) GetMetric(functionName string, metricName string, statist
 	}
 	output, err := c.cloudwatch.GetMetricStatistics(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get metric: %v", err)
+		return nil, fmt.Errorf("error getting metric %s for lambda function %s: %w", metricName, functionName, err)
 	}
 
 	datapoints := make([]float64, len(output.Datapoints))

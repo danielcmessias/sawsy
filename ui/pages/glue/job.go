@@ -1,6 +1,8 @@
 package glue
 
 import (
+	"log"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/danielcmessias/sawsy/data"
 	"github.com/danielcmessias/sawsy/ui/components/code"
@@ -22,7 +24,7 @@ func NewJobsPage(ctx *context.ProgramContext) *JobPageModel {
 	}
 }
 
-func (m *JobPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *JobPageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchDetails(client),
 		m.fetchRuns(client),
@@ -30,9 +32,12 @@ func (m *JobPageModel) FetchData(client data.Client) tea.Cmd {
 	)
 }
 
-func (m *JobPageModel) fetchDetails(client data.Client) tea.Cmd {
+func (m *JobPageModel) fetchDetails(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
-		rows, _ := client.Glue.GetJobDetails(m.Context.(JobPageContext).JobName)
+		rows, err := client.Glue.GetJobDetails(m.Context.(JobPageContext).JobName)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
@@ -43,9 +48,12 @@ func (m *JobPageModel) fetchDetails(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *JobPageModel) fetchRuns(client data.Client) tea.Cmd {
+func (m *JobPageModel) fetchRuns(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
-		rows, _ := client.Glue.GetJobRuns(m.Context.(JobPageContext).JobName)
+		rows, err := client.Glue.GetJobRuns(m.Context.(JobPageContext).JobName)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
@@ -56,9 +64,12 @@ func (m *JobPageModel) fetchRuns(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *JobPageModel) fetchScript(client data.Client) tea.Cmd {
+func (m *JobPageModel) fetchScript(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
-		script, location, _ := client.Glue.GetJobScript(m.Context.(JobPageContext).JobName)
+		script, location, err := client.Glue.GetJobScript(m.Context.(JobPageContext).JobName)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		msg := code.NewCodeContentMsg{
 			Page:     m.Spec.Name,

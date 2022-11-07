@@ -20,7 +20,7 @@ func NewLakeFormationPage(ctx *context.ProgramContext) *LakeFormationPageModel {
 	}
 }
 
-func (m *LakeFormationPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *LakeFormationPageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchDatabasesCmd(client, nil),
 		m.fetchTablesCmd(client, nil),
@@ -30,9 +30,13 @@ func (m *LakeFormationPageModel) FetchData(client data.Client) tea.Cmd {
 	)
 }
 
-func (m *LakeFormationPageModel) fetchDatabasesCmd(client data.Client, nextToken *string) tea.Cmd {
+func (m *LakeFormationPageModel) fetchDatabasesCmd(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.LakeFormation.GetDatabases(nextToken)
+		rows, nextToken, err := client.LakeFormation.GetDatabases(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Databases"),
@@ -45,9 +49,13 @@ func (m *LakeFormationPageModel) fetchDatabasesCmd(client data.Client, nextToken
 	}
 }
 
-func (m *LakeFormationPageModel) fetchTablesCmd(client data.Client, nextToken *string) tea.Cmd {
+func (m *LakeFormationPageModel) fetchTablesCmd(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.LakeFormation.GetTables(nextToken)
+		rows, nextToken, err := client.LakeFormation.GetTables(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Tables"),
@@ -60,9 +68,13 @@ func (m *LakeFormationPageModel) fetchTablesCmd(client data.Client, nextToken *s
 	}
 }
 
-func (m *LakeFormationPageModel) fetchLFTagsCmd(client data.Client, nextToken *string) tea.Cmd {
+func (m *LakeFormationPageModel) fetchLFTagsCmd(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.LakeFormation.GetLFTags(nextToken)
+		rows, nextToken, err := client.LakeFormation.GetLFTags(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("LF-Tags"),
@@ -75,9 +87,13 @@ func (m *LakeFormationPageModel) fetchLFTagsCmd(client data.Client, nextToken *s
 	}
 }
 
-func (m *LakeFormationPageModel) fetchLFTagPermissionsCmd(client data.Client, nextToken *string) tea.Cmd {
+func (m *LakeFormationPageModel) fetchLFTagPermissionsCmd(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.LakeFormation.GetLFTagPermissions(nextToken)
+		rows, nextToken, err := client.LakeFormation.GetLFTagPermissions(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("LF-Tag Perms"),
@@ -90,9 +106,13 @@ func (m *LakeFormationPageModel) fetchLFTagPermissionsCmd(client data.Client, ne
 	}
 }
 
-func (m *LakeFormationPageModel) fetchDataLakeLocationsCmd(client data.Client, nextToken *string) tea.Cmd {
+func (m *LakeFormationPageModel) fetchDataLakeLocationsCmd(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.LakeFormation.GetDataLakeLocations(nextToken)
+		rows, nextToken, err := client.LakeFormation.GetDataLakeLocations(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("LF Locations"),
@@ -105,7 +125,7 @@ func (m *LakeFormationPageModel) fetchDataLakeLocationsCmd(client data.Client, n
 	}
 }
 
-func (m *LakeFormationPageModel) Inspect(client data.Client) tea.Cmd {
+func (m *LakeFormationPageModel) Inspect(client *data.Client) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")

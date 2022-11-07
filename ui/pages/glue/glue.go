@@ -20,16 +20,19 @@ func NewGluePage(ctx *context.ProgramContext) *GluePageModel {
 	}
 }
 
-func (m *GluePageModel) FetchData(client data.Client) tea.Cmd {
+func (m *GluePageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchJobs(client, nil),
 		m.fetchCrawlers(client, nil),
 	)
 }
 
-func (m *GluePageModel) fetchJobs(client data.Client, nextToken *string) tea.Cmd {
+func (m *GluePageModel) fetchJobs(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.Glue.GetJobsRows(nextToken)
+		rows, nextToken, err := client.Glue.GetJobsRows(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
@@ -43,9 +46,12 @@ func (m *GluePageModel) fetchJobs(client data.Client, nextToken *string) tea.Cmd
 	}
 }
 
-func (m *GluePageModel) fetchCrawlers(client data.Client, nextToken *string) tea.Cmd {
+func (m *GluePageModel) fetchCrawlers(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.Glue.GetCrawlersRows(nextToken)
+		rows, nextToken, err := client.Glue.GetCrawlersRows(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
@@ -59,7 +65,7 @@ func (m *GluePageModel) fetchCrawlers(client data.Client, nextToken *string) tea
 	}
 }
 
-func (m *GluePageModel) Inspect(client data.Client) tea.Cmd {
+func (m *GluePageModel) Inspect(client *data.Client) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")

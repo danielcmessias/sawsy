@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -39,7 +39,7 @@ func (c *LakeFormationClient) GetDatabases(nextToken *string) ([]table.Row, *str
 
 	output, err := c.glue.GetDatabases(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get Lake Formation databases: %v", err)
+		return nil, nil, fmt.Errorf("error listing Glue databases: %w", err)
 	}
 
 	var rows []table.Row
@@ -78,7 +78,7 @@ func (c *LakeFormationClient) GetTables(nextToken *string) ([]table.Row, *string
 
 	output, err := c.glue.SearchTables(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get Lake Formation tables: %v", err)
+		return nil, nil, fmt.Errorf("error listing Glue tables: %w", err)
 	}
 
 	var rows []table.Row
@@ -118,7 +118,7 @@ func (c *LakeFormationClient) GetLFTags(nextToken *string) ([]table.Row, *string
 
 	output, err := c.lf.ListLFTags(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get tables: %v", err)
+		return nil, nil, fmt.Errorf("error listing LF tags: %w", err)
 	}
 	var rows []table.Row
 	for _, t := range output.LFTags {
@@ -143,7 +143,7 @@ func (c *LakeFormationClient) GetLFTagPermissions(nextToken *string) ([]table.Ro
 
 	output, err := c.lf.ListPermissions(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get LF-Tag Permissions: %v", err)
+		return nil, nil, fmt.Errorf("error listing LF tag permissions: %w", err)
 	}
 	var rows []table.Row
 	for _, p := range output.PrincipalResourcePermissions {
@@ -179,7 +179,7 @@ func (c *LakeFormationClient) GetDataLakeLocations(nextToken *string) ([]table.R
 
 	output, err := c.lf.ListResources(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get LF resources: %v", err)
+		return nil, nil, fmt.Errorf("error listing LF data lake locations: %w", err)
 	}
 
 	var rows []table.Row
@@ -195,7 +195,7 @@ func (c *LakeFormationClient) GetDatabaseDetails(databaseName string) ([]table.R
 	}
 	output, err := c.glue.GetDatabase(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get LF database: %v", err)
+		return nil, fmt.Errorf("error getting Glue database: %w", err)
 	}
 
 	rows := []table.Row{
@@ -218,7 +218,7 @@ func (c *LakeFormationClient) GetDatabaseTags(databaseName string) ([]table.Row,
 	}
 	output, err := c.lf.GetResourceLFTags(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get LF database tags: %v", err)
+		return nil, fmt.Errorf("error getting Glue database tags: %w", err)
 	}
 	var rows []table.Row
 	for _, t := range output.LFTagOnDatabase {
@@ -235,7 +235,7 @@ func (c *LakeFormationClient) GetTableDetailsAndSchema(tableName string, databas
 	}
 	output, err := c.glue.GetTable(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get LF table: %v", err)
+		return nil, nil, fmt.Errorf("error getting Glue table: %w", err)
 	}
 
 	detailsRows := []table.Row{
@@ -266,7 +266,7 @@ func (c *LakeFormationClient) GetTableTags(tableName string, databaseName string
 	}
 	output, err := c.lf.GetResourceLFTags(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get LF table tags: %v", err)
+		return nil, fmt.Errorf("error getting Glue table tags: %w", err)
 	}
 	var rows []table.Row
 	for _, t := range output.LFTagsOnTable {

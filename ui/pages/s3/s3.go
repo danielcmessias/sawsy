@@ -20,17 +20,21 @@ func NewS3Page(ctx *context.ProgramContext) *S3PageModel {
 	}
 }
 
-func (m *S3PageModel) FetchData(client data.Client) tea.Cmd {
+func (m *S3PageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchBuckets(client),
 	)
 }
 
-func (m *S3PageModel) fetchBuckets(client data.Client) tea.Cmd {
+func (m *S3PageModel) fetchBuckets(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
 		var nextCmds []tea.Cmd
 
-		rows, _ := client.S3.GetBuckets()
+		rows, err := client.S3.GetBuckets()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		for _, row := range rows {
 			nextCmds = append(nextCmds, m.fetchBucketRegion(client, row))
 		}
@@ -45,7 +49,7 @@ func (m *S3PageModel) fetchBuckets(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *S3PageModel) fetchBucketRegion(client data.Client, row table.Row) tea.Cmd {
+func (m *S3PageModel) fetchBucketRegion(client *data.Client, row table.Row) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")
@@ -69,7 +73,7 @@ func (m *S3PageModel) fetchBucketRegion(client data.Client, row table.Row) tea.C
 	}
 }
 
-func (m *S3PageModel) Inspect(client data.Client) tea.Cmd {
+func (m *S3PageModel) Inspect(client *data.Client) tea.Cmd {
 	if m.Tabs.CurrentTabId != m.GetPaneId("Buckets") {
 		return nil
 	}

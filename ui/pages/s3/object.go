@@ -1,6 +1,8 @@
 package s3
 
 import (
+	"log"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/danielcmessias/sawsy/data"
 	"github.com/danielcmessias/sawsy/ui/components/page"
@@ -23,16 +25,19 @@ func NewObjectPage(ctx *context.ProgramContext) *ObjectPageModel {
 	}
 }
 
-func (m *ObjectPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *ObjectPageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchProperties(client),
 	)
 }
 
-func (m *ObjectPageModel) fetchProperties(client data.Client) tea.Cmd {
+func (m *ObjectPageModel) fetchProperties(client *data.Client) tea.Cmd {
 	context := m.Context.(ObjectPageContext)
 	return func() tea.Msg {
-		rows, _ := client.S3.GetObjectProperties(context.Bucket, context.Key, context.Region)
+		rows, err := client.S3.GetObjectProperties(context.Bucket, context.Key, context.Region)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,

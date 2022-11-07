@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
@@ -29,11 +29,11 @@ type Client struct {
 	S3            *S3Client
 }
 
-func NewClient() Client {
+func NewClient() (*Client, error) {
 	ctx := context.TODO()
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+		return nil, fmt.Errorf("error when loading SDK config: %w", err)
 	}
 
 	cloudwatch := cloudwatch.NewFromConfig(cfg)
@@ -44,7 +44,7 @@ func NewClient() Client {
 	rds := rds.NewFromConfig(cfg)
 	s3 := s3.NewFromConfig(cfg)
 
-	return Client{
+	return &Client{
 		ctx: ctx,
 		sts: sts.NewFromConfig(cfg),
 
@@ -54,15 +54,14 @@ func NewClient() Client {
 		Lambda:        NewLambdaClient(ctx, lambda, cloudwatch),
 		RDS:           NewRDSClient(ctx, rds, cloudwatch),
 		S3:            NewS3Client(ctx, s3),
-	}
+	}, nil
 }
 
-func (c *Client) GetCurrentAWSAccountId() string {
+func (c *Client) GetCurrentAWSAccountId() (string, error) {
 	input := sts.GetCallerIdentityInput{}
 	output, err := c.sts.GetCallerIdentity(c.ctx, &input)
 	if err != nil {
-		log.Fatalf("unable to get caller identity: %v", err)
+		return "", fmt.Errorf("error getting AWS Account ID: %w", err)
 	}
-
-	return *output.Account
+	return *output.Account, nil
 }

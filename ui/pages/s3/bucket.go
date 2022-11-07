@@ -53,7 +53,7 @@ func (m *BucketPageModel) SetSize(width int, height int) {
 	}
 }
 
-func (m *BucketPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *BucketPageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchObjects(client, nil),
 		m.fetchBucketPolicy(client),
@@ -61,10 +61,14 @@ func (m *BucketPageModel) FetchData(client data.Client) tea.Cmd {
 	)
 }
 
-func (m *BucketPageModel) fetchObjects(client data.Client, nextToken *string) tea.Cmd {
+func (m *BucketPageModel) fetchObjects(client *data.Client, nextToken *string) tea.Cmd {
 	context := m.Context.(BucketPageContext)
 	return func() tea.Msg {
-		rows, nextToken, _ := client.S3.GetObjects(context.Bucket, context.Region, context.Prefix, nextToken)
+		rows, nextToken, err := client.S3.GetObjects(context.Bucket, context.Region, context.Prefix, nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Objects"),
@@ -77,7 +81,7 @@ func (m *BucketPageModel) fetchObjects(client data.Client, nextToken *string) te
 	}
 }
 
-func (m *BucketPageModel) fetchBucketPolicy(client data.Client) tea.Cmd {
+func (m *BucketPageModel) fetchBucketPolicy(client *data.Client) tea.Cmd {
 	context := m.Context.(BucketPageContext)
 	return func() tea.Msg {
 		policy, err := client.S3.GetBucketPolicy(context.Bucket, context.Region)
@@ -97,10 +101,14 @@ func (m *BucketPageModel) fetchBucketPolicy(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *BucketPageModel) fetchBucketTags(client data.Client) tea.Cmd {
+func (m *BucketPageModel) fetchBucketTags(client *data.Client) tea.Cmd {
 	context := m.Context.(BucketPageContext)
 	return func() tea.Msg {
-		rows, _ := client.S3.GetBucketTags(context.Bucket, context.Region)
+		rows, err := client.S3.GetBucketTags(context.Bucket, context.Region)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Tags"),
@@ -110,7 +118,7 @@ func (m *BucketPageModel) fetchBucketTags(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *BucketPageModel) Inspect(client data.Client) tea.Cmd {
+func (m *BucketPageModel) Inspect(client *data.Client) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")

@@ -30,7 +30,7 @@ func NewServicesPage(ctx *context.ProgramContext) *ServicesPageModel {
 	}
 }
 
-func (m *ServicesPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *ServicesPageModel) FetchData(client *data.Client) tea.Cmd {
 	var rows []table.Row
 	var l []string
 	for s := range services {
@@ -51,7 +51,7 @@ func (m *ServicesPageModel) FetchData(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *ServicesPageModel) Inspect(client data.Client) tea.Cmd {
+func (m *ServicesPageModel) Inspect(client *data.Client) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")

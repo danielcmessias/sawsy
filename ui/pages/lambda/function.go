@@ -23,7 +23,7 @@ func NewFunctionPage(ctx *context.ProgramContext) *FunctionPageModel {
 	}
 }
 
-func (m *FunctionPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *FunctionPageModel) FetchData(client *data.Client) tea.Cmd {
 	cmds := []tea.Cmd{
 		m.fetchDetails(client),
 	}
@@ -33,7 +33,7 @@ func (m *FunctionPageModel) FetchData(client data.Client) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m *FunctionPageModel) fetchDetails(client data.Client) tea.Cmd {
+func (m *FunctionPageModel) fetchDetails(client *data.Client) tea.Cmd {
 	return func() tea.Msg {
 		rows, _ := client.Lambda.GetFunctionDetails(m.Context.(FunctionPageContext).FunctionName)
 
@@ -46,7 +46,7 @@ func (m *FunctionPageModel) fetchDetails(client data.Client) tea.Cmd {
 	}
 }
 
-func (m *FunctionPageModel) fetchMetric(client data.Client, galleryPaneId int, metric string, statistic types.Statistic, valueFormatter func(float64) float64) tea.Cmd {
+func (m *FunctionPageModel) fetchMetric(client *data.Client, galleryPaneId int, metric string, statistic types.Statistic, valueFormatter func(float64) float64) tea.Cmd {
 	return func() tea.Msg {
 		print("test")
 		data, _ := client.Lambda.GetMetric("sherlock-decryptor-production", metric, statistic)

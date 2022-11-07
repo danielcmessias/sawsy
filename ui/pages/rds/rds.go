@@ -20,15 +20,19 @@ func NewRDSPage(ctx *context.ProgramContext) *RDSPageModel {
 	}
 }
 
-func (m *RDSPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *RDSPageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchDatabases(client, nil),
 	)
 }
 
-func (m *RDSPageModel) fetchDatabases(client data.Client, nextToken *string) tea.Cmd {
+func (m *RDSPageModel) fetchDatabases(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
-		rows, nextToken, _ := client.RDS.GetDBInstances(nextToken)
+		rows, nextToken, err := client.RDS.GetDBInstances(nextToken)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		msg := page.NewRowsMsg{
 			Page:   m.Spec.Name,
 			PaneId: m.GetPaneId("Databases"),
@@ -41,7 +45,7 @@ func (m *RDSPageModel) fetchDatabases(client data.Client, nextToken *string) tea
 	}
 }
 
-func (m *RDSPageModel) Inspect(client data.Client) tea.Cmd {
+func (m *RDSPageModel) Inspect(client *data.Client) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")

@@ -24,14 +24,14 @@ func NewUserPage(ctx *context.ProgramContext) *UserPageModel {
 	}
 }
 
-func (m *UserPageModel) FetchData(client data.Client) tea.Cmd {
+func (m *UserPageModel) FetchData(client *data.Client) tea.Cmd {
 	return tea.Batch(
 		m.fetchUserPolicies(client, nil),
 		m.fetchUserTags(client, nil),
 	)
 }
 
-func (m *UserPageModel) fetchUserPolicies(client data.Client, nextToken *string) tea.Cmd {
+func (m *UserPageModel) fetchUserPolicies(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
 		rows, nextToken, _ := client.IAM.GetUserPolicies(m.Context.(UserPageContext).UserName, nextToken)
 		msg := page.NewRowsMsg{
@@ -46,7 +46,7 @@ func (m *UserPageModel) fetchUserPolicies(client data.Client, nextToken *string)
 	}
 }
 
-func (m *UserPageModel) fetchUserTags(client data.Client, nextToken *string) tea.Cmd {
+func (m *UserPageModel) fetchUserTags(client *data.Client, nextToken *string) tea.Cmd {
 	return func() tea.Msg {
 		rows, nextToken, _ := client.IAM.GetUserTags(m.Context.(UserPageContext).UserName, nextToken)
 		msg := page.NewRowsMsg{
@@ -61,7 +61,7 @@ func (m *UserPageModel) fetchUserTags(client data.Client, nextToken *string) tea
 	}
 }
 
-func (m *UserPageModel) Inspect(client data.Client) tea.Cmd {
+func (m *UserPageModel) Inspect(client *data.Client) tea.Cmd {
 	table, ok := m.CurrentPane().(*table.Model)
 	if !ok {
 		log.Fatal("This pane is not a table")
