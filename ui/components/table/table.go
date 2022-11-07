@@ -162,6 +162,9 @@ func (m *Model) GetCurrentItem() int {
 }
 
 func (m *Model) GetCurrentRow() Row {
+	if len(m.filteredRows) == 0 {
+		return nil
+	}
 	return m.filteredRows[m.rowsViewport.GetCurrItem()]
 }
 
@@ -170,6 +173,9 @@ func (m *Model) GetCurrentRowMarshalled() map[string]string {
 }
 
 func (m *Model) MarhsalRow(row Row) map[string]string {
+	if row == nil {
+		return nil
+	}
 	rowMap := make(map[string]string)
 	for i, col := range m.Columns {
 		rowMap[col.Title] = row[i]
@@ -293,6 +299,9 @@ func (m *Model) filterRows() {
 	}
 
 	m.rowsViewport.SetNumItems(len(m.filteredRows))
+	if m.rowsViewport.GetCurrItem() >= len(m.filteredRows) && len(m.filteredRows) > 0 {
+		m.rowsViewport.LastItem()
+	}
 	m.syncViewPortContent()
 }
 
