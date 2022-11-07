@@ -4,7 +4,6 @@ import (
 	"github.com/danielcmessias/sawsy/ui/components/page"
 	"github.com/danielcmessias/sawsy/ui/components/pane"
 	"github.com/danielcmessias/sawsy/ui/components/table"
-	"github.com/danielcmessias/sawsy/utils"
 	"github.com/danielcmessias/sawsy/utils/icons"
 )
 
@@ -44,8 +43,7 @@ var lakeFormationPageSpec = page.PageSpec{
 			},
 			Columns: []table.Column{
 				{
-					Title:    "Table",
-					MaxWidth: utils.IntPtr(128),
+					Title: "Table",
 				},
 				{
 					Title: "Database",
@@ -138,6 +136,23 @@ var databasePageSpec = page.PageSpec{
 				},
 				{
 					Title: "Value",
+				},
+			},
+		},
+		table.TableSpec{
+			BaseSpec: pane.BaseSpec{
+				Name: "Tables",
+				Icon: icons.TABLE,
+			},
+			Columns: []table.Column{
+				{
+					Title: "Table",
+				},
+				{
+					Title: "Database",
+				},
+				{
+					Title: "S3 Path",
 				},
 			},
 		},

@@ -107,6 +107,33 @@ func (c *LakeFormationClient) GetTables(nextToken *string) ([]table.Row, *string
 	return rows, output.NextToken, nil
 }
 
+func (c *LakeFormationClient) GetDatabaseTables(databaseName string) ([]table.Row, error) {
+	input := glue.GetTablesInput{
+		DatabaseName: aws.String(databaseName),
+	}
+
+	output, err := c.glue.GetTables(c.ctx, &input)
+	if err != nil {
+		return nil, fmt.Errorf("error listing Glue tables for database %s: %w", databaseName, err)
+	}
+
+	var rows []table.Row
+	for _, t := range output.TableList {
+		s3Path := ""
+		if t.StorageDescriptor != nil {
+			s3Path = aws.ToString(t.StorageDescriptor.Location)
+		}
+		row := table.Row{
+			aws.ToString(t.Name),
+			aws.ToString(t.DatabaseName),
+			s3Path,
+		}
+		rows = append(rows, row)
+	}
+
+	return rows, nil
+}
+
 func (c *LakeFormationClient) GetLFTags(nextToken *string) ([]table.Row, *string, error) {
 	input := lakeformation.ListLFTagsInput{
 		ResourceShareType: lftypes.ResourceShareTypeAll,

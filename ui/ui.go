@@ -136,10 +136,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			prev := m.visitedPages[l-1]
 			m.visitedPages = m.visitedPages[:l-1]
-			cmds = append(cmds, m.changePage(prev.PageName, prev.Context, true))
+			cmds = append(cmds, m.changePage(prev.PageName, prev.Context, false))
 
 		case key.Matches(msg, m.keys.Refresh) && !m.ctx.LockKeyboardCapture:
-			// Not implemented yet!
+			m.getCurrentPage().ClearData()
+			cmds = append(cmds, m.getCurrentPage().FetchData(m.client))
 
 		case key.Matches(msg, m.keys.Quit):
 			if !(m.ctx.LockKeyboardCapture && msg.String() == "q") {
