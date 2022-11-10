@@ -16,7 +16,8 @@ type KeyMap struct {
 	StartSearch   key.Binding
 	EndSearch     key.Binding
 	Inspect       key.Binding
-	Services      key.Binding
+	Home          key.Binding
+	SortCol       key.Binding
 	PrevPage      key.Binding
 	Help          key.Binding
 	Quit          key.Binding
@@ -32,7 +33,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 		{k.PrevCol, k.NextCol},
 		{k.PrevTab, k.NextTab},
 		{k.Inspect, k.PrevPage},
-		{k.StartSearch, k.Services},
+		{k.StartSearch, k.Home},
 		{k.Help, k.Quit},
 	}
 }
@@ -73,9 +74,13 @@ var Keys = KeyMap{
 		key.WithKeys("enter"),
 		key.WithHelp("enter", "inspect"),
 	),
-	Services: key.NewBinding(
+	Home: key.NewBinding(
+		key.WithKeys("h"),
+		key.WithHelp("h", "home"),
+	),
+	SortCol: key.NewBinding(
 		key.WithKeys("s"),
-		key.WithHelp("s", "services"),
+		key.WithHelp("s", "sort"),
 	),
 	PrevPage: key.NewBinding(
 		key.WithKeys("backspace"),

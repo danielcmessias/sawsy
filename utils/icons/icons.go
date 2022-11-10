@@ -24,4 +24,6 @@ const (
 	USER        = ""
 	USER_CIRCLE = ""
 	LAMBDA      = "ﬦ"
+	ARROW_UP    = "▲"
+	ARROW_DOWN  = "▼"
 )

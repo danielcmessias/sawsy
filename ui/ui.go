@@ -126,7 +126,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Inspect) && !m.ctx.LockKeyboardCapture:
 			cmds = append(cmds, m.getCurrentPage().Inspect(m.client))
 
-		case key.Matches(msg, m.keys.Services) && !m.ctx.LockKeyboardCapture:
+		case key.Matches(msg, m.keys.Home) && !m.ctx.LockKeyboardCapture:
 			cmds = append(cmds, m.changePage("services", nil, true))
 
 		case key.Matches(msg, m.keys.PrevPage) && !m.ctx.LockKeyboardCapture:

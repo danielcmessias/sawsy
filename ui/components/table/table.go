@@ -1,7 +1,9 @@
 package table
 
 import (
+	"fmt"
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -11,8 +13,17 @@ import (
 	"github.com/danielcmessias/sawsy/ui/components/listviewport"
 	"github.com/danielcmessias/sawsy/ui/components/pane"
 	"github.com/danielcmessias/sawsy/ui/context"
+	"github.com/danielcmessias/sawsy/utils/icons"
 
 	"github.com/danielcmessias/sawsy/utils"
+)
+
+type SortMode string
+
+const (
+	SortModeNone SortMode = "None"
+	SortModeAsc  SortMode = "ASC"
+	SortModeDesc SortMode = "DESC"
 )
 
 type Model struct {
@@ -30,6 +41,9 @@ type Model struct {
 	currColumnId int
 	colMaxWidths []int
 	noDataLabel  string
+
+	sortColId int
+	sortMode  SortMode
 }
 
 type Column struct {
@@ -83,6 +97,9 @@ func New(ctx *context.ProgramContext, spec TableSpec) *Model {
 		rowsViewport: listviewport.NewModel(spec.BaseSpec.Name, 0, 2),
 		colMaxWidths: colMaxWidths,
 		noDataLabel:  "Loading...",
+
+		sortColId: -1,
+		sortMode:  SortModeNone,
 	}
 }
 
@@ -113,6 +130,8 @@ func (m *Model) Update(msg tea.Msg) (pane.Pane, tea.Cmd, bool) {
 			m.nextCol()
 		case key.Matches(msg, m.ctx.Keys.PrevCol):
 			m.prevCol()
+		case key.Matches(msg, m.ctx.Keys.SortCol):
+			m.sortCol()
 		case key.Matches(msg, m.ctx.Keys.StartSearch):
 			m.search.Focus()
 			m.ctx.LockKeyboardCapture = true
@@ -208,6 +227,23 @@ func (m *Model) prevCol() int {
 	return m.currColumnId
 }
 
+func (m *Model) sortCol() {
+	if m.sortColId == m.currColumnId {
+		// Increment SortColMode
+		if m.sortMode == SortModeNone {
+			m.sortMode = SortModeAsc
+		} else if m.sortMode == SortModeAsc {
+			m.sortMode = SortModeDesc
+		} else if m.sortMode == SortModeDesc {
+			m.sortMode = SortModeNone
+		}
+	} else {
+		m.sortColId = m.currColumnId
+		m.sortMode = SortModeAsc
+	}
+	m.filterRows()
+}
+
 func (m *Model) syncViewPortContent() {
 	headerColumns := m.renderHeaderColumns()
 	renderedRows := make([]string, 0, len(m.filteredRows))
@@ -286,6 +322,20 @@ func (m *Model) filterRows() {
 			}
 		}
 	}
+
+	// Sorting
+	if m.sortColId != -1 {
+		if m.sortMode == SortModeAsc {
+			sort.Slice(filteredRows, func(i, j int) bool {
+				return filteredRows[i][m.sortColId] < filteredRows[j][m.sortColId]
+			})
+		} else if m.sortMode == SortModeDesc {
+			sort.Slice(filteredRows, func(i, j int) bool {
+				return filteredRows[i][m.sortColId] > filteredRows[j][m.sortColId]
+			})
+		}
+	}
+
 	m.filteredRows = filteredRows
 
 	for _, row := range m.filteredRows {
@@ -317,32 +367,48 @@ func (m *Model) renderHeaderColumns() []string {
 	renderedColumns := make([]string, len(m.Columns))
 	remainingWidth := m.width
 	var width int
+	var title string
 
 	for i, column := range m.Columns {
 		width = lipgloss.Width(titleCellStyle.Copy().Render(column.Title))
+
+		title = column.Title
+		if i == m.sortColId {
+			title = prefixSortModeToTitle(m.sortMode, title)
+		}
+
 		if i != m.currColumnId {
 			renderedColumns[i] = titleCellStyle.
 				Copy().
 				Width(width).
 				MaxWidth(width).
-				Render(column.Title)
+				Render(title)
 			remainingWidth -= width
 		}
 	}
 
 	width = utils.Min(remainingWidth, m.colMaxWidths[m.currColumnId])
+	title = m.Columns[m.currColumnId].Title
+	if m.currColumnId == m.sortColId {
+		title = prefixSortModeToTitle(m.sortMode, title)
+	}
+
 	renderedColumns[m.currColumnId] = selectedTitleCellStyle.Copy().
 		Width(width).
 		MaxWidth(width).
-		Render(m.Columns[m.currColumnId].Title)
+		Render(title)
 	remainingWidth -= width
 
 	for i := range m.Columns {
+		title = m.Columns[i].Title
+		if i == m.sortColId {
+			title = prefixSortModeToTitle(m.sortMode, title)
+		}
 		if i != m.currColumnId && remainingWidth-m.colMaxWidths[i] > 0 {
 			renderedColumns[i] = titleCellStyle.Copy().
 				Width(m.colMaxWidths[i]).
 				MaxWidth(m.colMaxWidths[i]).
-				Render(m.Columns[i].Title)
+				Render(title)
 			remainingWidth -= m.colMaxWidths[i]
 		}
 	}
@@ -392,4 +458,14 @@ func (m *Model) renderRow(rowId int, headerColumns []string) string {
 	return rowStyle.Copy().Render(
 		lipgloss.JoinHorizontal(lipgloss.Top, renderedColumns...),
 	)
+}
+
+func prefixSortModeToTitle(sortMode SortMode, title string) string {
+	if sortMode == SortModeAsc {
+		return fmt.Sprintf("%s %s", title, icons.ARROW_UP)
+	} else if sortMode == SortModeDesc {
+		return fmt.Sprintf("%s %s", title, icons.ARROW_DOWN)
+	} else {
+		return title
+	}
 }
